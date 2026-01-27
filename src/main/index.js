@@ -2,8 +2,10 @@ import { app, Tray, Menu, BrowserWindow, screen, globalShortcut, shell, ipcMain,
 import { updateElectronApp } from 'update-electron-app';
 import Store from 'electron-store';
 import { randomUUID } from 'crypto';
+import { PostHog } from 'posthog-node'
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import electronSquirrelStartup from 'electron-squirrel-startup';
 
 if (electronSquirrelStartup) {
@@ -461,6 +463,8 @@ app.on('second-instance', () => {
 
 app.commandLine.appendSwitch('disable-pinch');
 app.whenReady().then(() => {
+  launchTracker()
+
   preCheck()
 
   hideDock()
@@ -1163,6 +1167,35 @@ function safeSetLoginItemSettings(settings) {
   try {
     app.setLoginItemSettings(settings)
   } catch (error) {}
+}
+
+function launchTracker() {
+  if (isDevelopment) { return }
+
+  try {
+    const PUBLIC_POSTHOG_KEY = process.env.PUBLIC_POSTHOG_KEY;
+    if (!PUBLIC_POSTHOG_KEY) return;
+
+    const posthog = new PostHog(PUBLIC_POSTHOG_KEY, {
+      host: 'https://us.i.posthog.com'
+    })
+
+    posthog.capture({
+      distinctId: store.get('user_id'),
+      event: 'app_launch',
+      properties: {
+        platform: 'app',
+
+        app_version: app.getVersion(),
+
+        os_platform: os.platform(),
+        os_release:  os.release(),
+        arch:        os.arch(),
+
+        config: store.store,
+      }
+    })
+  } catch (_) {}
 }
 
 function rawLog(message, ...args) {
