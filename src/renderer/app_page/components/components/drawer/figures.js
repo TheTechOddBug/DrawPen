@@ -16,11 +16,13 @@ import {
   dotHoverRadius,
   dotBorderColor,
   dotHoverColor,
+  activeSceletonLineWidth,
+  activeSelectionBoxLineWidth,
   erasedFigureColor,
   eraserTailColor,
   highlighterAlpha,
   eraserAlpha,
-} from '../../constants.js'
+} from '../../constants.js';
 
 const hslColor = (degree) => {
   return `hsl(${degree % 360}, 70%, 60%)`
@@ -87,13 +89,12 @@ export const hslTextGradientStops = (pointA, pointB, colorDeg) => {
 
 const activeColorAndWidth = (figure, colorList) => {
   const { colorIndex } = figure;
-  const width = 2;
 
   if (colorList[colorIndex].isLightColor) {
-    return ['#6CC3E2', width]
+    return [dotBorderColor, activeSceletonLineWidth]
   }
 
-  return ['#FFF', width]
+  return ['#FFF', activeSceletonLineWidth]
 }
 
 const detectColorAndWidth = (ctx, figure, updateRainbowColorDeg, colorList) => {
@@ -540,8 +541,8 @@ const drawTextSkeleton = (ctx, [startX, startY], text, color, fontSize, font_y_o
 }
 
 const drawSelectionBox = (ctx, startX, startY, endX, endY) => {
-  ctx.strokeStyle = "#6CC3E2";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = dotBorderColor;
+  ctx.lineWidth = activeSelectionBoxLineWidth;
   ctx.strokeRect(startX, startY, endX - startX, endY - startY);
 }
 

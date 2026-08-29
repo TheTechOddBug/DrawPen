@@ -7,7 +7,13 @@ import {
   calcSegmentsFlatArrow,
 } from './general.js';
 
-import { dotTextMargin, figureMinScale, widthList, dotHoverRadius } from '../constants.js'
+import {
+  dotTextMargin,
+  figureMinScale,
+  widthList,
+  dotHoverRadius,
+  sideHoverTolerance,
+} from '../constants.js'
 
 const withinRadius = (x, y) => {
   const radius = dotHoverRadius
@@ -288,8 +294,8 @@ export const isOverFigure = (x, y, figure) => {
       return isOverRectangle(x, y, figure)
     case 'oval':
       return isOverOval(x, y, figure)
-    // case 'text':
-    //   return isOverText(x, y, figure)
+    case 'text':
+      return isOverText(x, y, figure)
     default:
       return false
   }
@@ -715,6 +721,10 @@ export function calculateAspectRatio(figure) {
 
   const dx = x2 - x1;
   const dy = y2 - y1;
+
+  if (dx === 0 && dy === 0) {
+    return figure.ratio;
+  }
 
   return Math.min(Math.max(Math.abs(dx / dy), 0.02), 50);
 }

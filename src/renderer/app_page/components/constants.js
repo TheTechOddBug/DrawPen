@@ -37,8 +37,11 @@ export const arrowVariantList = ['arrow', 'flat_arrow'];
 export const dotRadius = 5;
 export const dotStrokeWidth = 1;
 export const dotHoverRadius = 10;
-export const dotBorderColor = '#6CC3E2';
+export const sideHoverTolerance = 5;
+export const dotBorderColor = '#6CC3E2'; // Another Color: "#6CC3E2" (light blue)
 export const dotHoverColor = dotBorderColor + '99';
+export const activeSceletonLineWidth = 2;
+export const activeSelectionBoxLineWidth = 1;
 export const dotTextMargin = 5;
 
 export const isLightColor = (color) => {

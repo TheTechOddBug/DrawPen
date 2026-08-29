@@ -893,12 +893,6 @@ const Application = (settings) => {
     return allFigures.findLast((figure) => isOnFigure(x, y, figure))
   };
 
-  const getDotNameAtMousePosition = (x, y) => {
-    const activeFigure = findActiveFigure()
-
-    return getDotNameOnFigure(x, y, activeFigure)
-  }
-
   const setActiveHoveredDotName = (hoveredDotName) => {
     setActiveFigureInfo(prev => {
       if (!prev) return prev;
@@ -933,7 +927,7 @@ const Application = (settings) => {
       return isPrimaryDiagonal ? 'nwse-resize' : 'nesw-resize';
     }
 
-    if (figure.type === 'text') {
+    if (['text'].includes(figure.type)) {
       if (['pointAScale', 'pointBScale'].includes(resizingDotName)) return 'nwse-resize';
       if (['pointCScale', 'pointDScale'].includes(resizingDotName)) return 'nesw-resize';
     }
@@ -944,7 +938,7 @@ const Application = (settings) => {
   const setMouseCursor = (x, y) => {
     if (activeFigureInfo) {
       const activeFigure = findActiveFigure()
-      const resizingDotName = getDotNameAtMousePosition(x, y);
+      const resizingDotName = getDotNameOnFigure(x, y, activeFigure);
 
       if (resizingDotName) {
         setActiveHoveredDotName(resizingDotName);
@@ -1003,7 +997,7 @@ const Application = (settings) => {
     if (activeFigureInfo) {
       // Click on dots of the active figure
       const activeFigure = findActiveFigure()
-      const resizingDotName = getDotNameAtMousePosition(x, y);
+      const resizingDotName = getDotNameOnFigure(x, y, activeFigure);
 
       if (resizingDotName) {
         const resizingPointerOffset = getDotOffsetCoordinates(activeFigure, resizingDotName, x, y);
@@ -1026,7 +1020,13 @@ const Application = (settings) => {
         setActiveFigureInfo(prev => {
           if (!prev) return prev;
 
-          return { ...prev, dragging: true, x, y, hoveredDotName: null };
+          return {
+            ...prev,
+            dragging: true,
+            x: x,
+            y: y,
+            hoveredDotName: null
+          };
         });
 
         return;
@@ -1131,11 +1131,7 @@ const Application = (settings) => {
       }
 
       if (activeFigureInfo.resizing) {
-        resizeFigure(
-          activeFigure,
-          activeFigureInfo,
-          { x, y, isShiftPressed }
-        )
+        resizeFigure(activeFigure, activeFigureInfo, { x, y, isShiftPressed })
       }
 
       setActiveFigureInfo(prev => ({ ...prev, x, y }));
