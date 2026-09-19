@@ -1335,6 +1335,8 @@ const Application = (settings) => {
   const handleContextMenu = (event) => {
     event.preventDefault();
 
+    setActiveFigureInfo(null);
+
     if (clearDrawingsOnHide) {
       handleReset();
     }
