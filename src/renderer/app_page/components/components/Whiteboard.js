@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './Whiteboard.scss';
 
-import { LuPanelRightClose, LuPanelRightOpen } from 'react-icons/lu';
+import { LuSettings } from 'react-icons/lu';
 import WhiteboardResizeFrame from './WhiteboardResizeFrame.js';
 import WhiteboardSidebar from './WhiteboardSidebar.js';
 import { minWhiteboardWidth, minWhiteboardHeight } from '../constants.js';
@@ -237,8 +237,6 @@ const Whiteboard = ({
     lastSnapResizeRef.current = { handle: null, snapIndex: -1 };
   };
 
-  const SidebarIcon = isSidebarOpen ? LuPanelRightClose : LuPanelRightOpen;
-
   return (
     <div
       id="whiteboard"
@@ -279,7 +277,7 @@ const Whiteboard = ({
             className={`whiteboard-toggle whiteboard-toggle--${theme}`}
             onClick={() => setIsSidebarOpen((prev) => !prev)}
           >
-            <SidebarIcon className="whiteboard-toggle__icon" />
+            <LuSettings className="whiteboard-toggle__icon" />
           </div>
       }
 
