@@ -53,8 +53,8 @@ const drawDot = (ctx, point, isHovered) => {
   ctx.stroke();
 }
 
-const createGradient = (ctx, pointA, pointB, rainbowColorDeg, updateRainbowColorDeg) => {
-  const [distance, hslStops] = hslTextGradientStops(pointA, pointB, rainbowColorDeg)
+const createGradient = (ctx, pointA, pointB, rainbowColorDeg, updateRainbowColorDeg, scale) => {
+  const [distance, hslStops] = hslTextGradientStops(pointA, pointB, rainbowColorDeg, scale)
 
   if (hslStops.length === 1) {
     return hslStops[0]
@@ -70,8 +70,10 @@ const createGradient = (ctx, pointA, pointB, rainbowColorDeg, updateRainbowColor
   return gradient
 }
 
-export const hslTextGradientStops = (pointA, pointB, colorDeg) => {
-  const distance = distanceBetweenPoints(pointA, pointB) * rainbowScaleFactor
+export const hslTextGradientStops = (pointA, pointB, colorDeg, scale) => {
+  const actualScale = scale ?? 1;
+
+  const distance = distanceBetweenPoints(pointA, pointB) * rainbowScaleFactor / actualScale
 
   const amountOfColorChanges = Math.round(distance)
 
@@ -121,7 +123,7 @@ const detectColorAndFontSize = (ctx, figure, updateRainbowColorDeg, colorList) =
   if (colorList[colorIndex].isRainbow) {
     const pointB = [pointA[0], pointA[1] + height * scale] // Vertical Gradient
 
-    color = createGradient(ctx, pointA, pointB, rainbowColorDeg, updateRainbowColorDeg)
+    color = createGradient(ctx, pointA, pointB, rainbowColorDeg, updateRainbowColorDeg, scale)
   }
 
   if (erased) {

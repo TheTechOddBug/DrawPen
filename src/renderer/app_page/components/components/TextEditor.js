@@ -67,7 +67,7 @@ const TextEditor = ({
     const height = textArea.offsetHeight;
     // const height = textArea.getBoundingClientRect().height
 
-    const [_distance, hslStops] = hslTextGradientStops([0, 0], [0, height], textEditorContainer.rainbowColorDeg) // Vertical Gradient
+    const [_distance, hslStops] = hslTextGradientStops([0, 0], [0, height], textEditorContainer.rainbowColorDeg, textEditorContainer.scale) // Vertical Gradient
 
     textArea.style.background = `linear-gradient(180deg, ${hslStops.join(", ")})`;
     textArea.style.webkitBackgroundClip = "text";
