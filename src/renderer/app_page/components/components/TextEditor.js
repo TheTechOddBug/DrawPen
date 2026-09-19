@@ -65,6 +65,7 @@ const TextEditor = ({
     }
 
     const height = textArea.offsetHeight;
+    // const height = textArea.getBoundingClientRect().height
 
     const [_distance, hslStops] = hslTextGradientStops([0, 0], [0, height], textEditorContainer.rainbowColorDeg) // Vertical Gradient
 
@@ -84,13 +85,22 @@ const TextEditor = ({
 
   const top = textEditorContainer.startAt[1];
   const left = textEditorContainer.startAt[0];
-  const color = getCursorColor(colorList, textEditorContainer.colorIndex, textEditorContainer.rainbowColorDeg);
-  const fontSize = widthList[textEditorContainer.widthIndex].font_size;
   const scale = textEditorContainer.scale;
+
+  const color = getCursorColor(colorList, textEditorContainer.colorIndex, textEditorContainer.rainbowColorDeg);
+  const fontSize = widthList[textEditorContainer.widthIndex].font_size * scale;
+  let width = textEditorContainer.width * scale;
+  let textEditorClassName = 'fixed-width';
+
+  if (textEditorContainer.autoResize) {
+    width = 'auto';
+    textEditorClassName = '';
+  }
 
   return (
     <div
       id="contentEditable"
+      className={textEditorClassName}
       contentEditable="plaintext-only"
       suppressContentEditableWarning
       spellCheck="false"
@@ -100,9 +110,9 @@ const TextEditor = ({
       style={{
         top: top,
         left: left,
+        width: width,
         color: color,
         fontSize: fontSize,
-        transform: `scale(${scale})`,
       }}
     />
   );

@@ -6,17 +6,18 @@ import {
   calcSegmentsFlatArrow,
   buildArrowArcSegments,
   isSmallArrowFigure,
+  getCornersWithMargin,
+  getWrappedTextLines,
+  getTextAutoResizeHandle,
 } from '../../utils/general.js';
 import {
   widthList,
   rainbowScaleFactor,
-  dotTextMargin,
   dotRadius,
   dotStrokeWidth,
   dotHoverRadius,
   dotBorderColor,
   dotHoverColor,
-  activeSceletonLineWidth,
   activeSelectionBoxLineWidth,
   erasedFigureColor,
   eraserTailColor,
@@ -64,7 +65,7 @@ const createGradient = (ctx, pointA, pointB, rainbowColorDeg, updateRainbowColor
     gradient.addColorStop(index / (hslStops.length - 1), color)
   })
 
-  updateRainbowColorDeg(rainbowColorDeg + distance)
+  updateRainbowColorDeg(currentDeg => Math.max(currentDeg, rainbowColorDeg + distance))
   return gradient
 }
 
@@ -87,16 +88,6 @@ export const hslTextGradientStops = (pointA, pointB, colorDeg) => {
   return [distance, hslStops];
 }
 
-const activeColorAndWidth = (figure, colorList) => {
-  const { colorIndex } = figure;
-
-  if (colorList[colorIndex].isLightColor) {
-    return [dotBorderColor, activeSceletonLineWidth]
-  }
-
-  return ['#FFF', activeSceletonLineWidth]
-}
-
 const detectColorAndWidth = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB], colorIndex, widthIndex, rainbowColorDeg, erased } = figure
 
@@ -115,7 +106,7 @@ const detectColorAndWidth = (ctx, figure, updateRainbowColorDeg, colorList) => {
 }
 
 const detectColorAndFontSize = (ctx, figure, updateRainbowColorDeg, colorList) => {
-  const { points: [pointA], colorIndex, widthIndex, rainbowColorDeg, width, height, erased } = figure;
+  const { points: [pointA], colorIndex, widthIndex, rainbowColorDeg, height, scale, erased } = figure;
 
   let color = colorList[colorIndex].color
   const fontSize = widthList[widthIndex].font_size
@@ -127,7 +118,7 @@ const detectColorAndFontSize = (ctx, figure, updateRainbowColorDeg, colorList) =
   }
 
   if (colorList[colorIndex].isRainbow) {
-    const pointB = [pointA[0], pointA[1] + height] // Vertical Gradient
+    const pointB = [pointA[0], pointA[1] + height * scale] // Vertical Gradient
 
     color = createGradient(ctx, pointA, pointB, rainbowColorDeg, updateRainbowColorDeg)
   }
@@ -314,7 +305,9 @@ export const drawArrow = (ctx, figure, updateRainbowColorDeg, colorList) => {
 }
 
 export const drawArrowActive = (ctx, figure, hoveredDot) => {
-  drawDotsForFigure(ctx, figure, hoveredDot)
+  const [pointA, pointB] = figure.points
+
+  drawTwoDots(ctx, pointA, pointB, hoveredDot)
 }
 
 export const drawFlatArrow = (ctx, figure, updateRainbowColorDeg, colorList) => {
@@ -327,7 +320,9 @@ export const drawFlatArrow = (ctx, figure, updateRainbowColorDeg, colorList) => 
 }
 
 export const drawFlatArrowActive = (ctx, figure, hoveredDot) => {
-  drawDotsForFigure(ctx, figure, hoveredDot)
+  const [pointA, pointB] = figure.points
+
+  drawTwoDots(ctx, pointA, pointB, hoveredDot)
 }
 
 export const drawLine = (ctx, figure, updateRainbowColorDeg, colorList) => {
@@ -337,13 +332,10 @@ export const drawLine = (ctx, figure, updateRainbowColorDeg, colorList) => {
   drawLineSkeleton(ctx, pointA, pointB, color, width)
 }
 
-export const drawLineActive = (ctx, figure, hoveredDot, colorList) => {
+export const drawLineActive = (ctx, figure, hoveredDot) => {
   const [pointA, pointB] = figure.points
-  const [color, width] = activeColorAndWidth(figure, colorList)
 
-  drawLineSkeleton(ctx, pointA, pointB, color, width)
-
-  drawDotsForFigure(ctx, figure, hoveredDot)
+  drawTwoDots(ctx, pointA, pointB, hoveredDot)
 }
 
 const drawLineSkeleton = (ctx, pointA, pointB, color, width) => {
@@ -367,13 +359,10 @@ export const drawOval = (ctx, figure, updateRainbowColorDeg, colorList) => {
   drawOvalSkeleton(ctx, pointA, pointB, color, width)
 }
 
-export const drawOvalActive = (ctx, figure, hoveredDot, colorList) => {
+export const drawOvalActive = (ctx, figure, hoveredDot) => {
   const [pointA, pointB] = figure.points
-  const [color, width] = activeColorAndWidth(figure, colorList)
 
-  drawOvalSkeleton(ctx, pointA, pointB, color, width)
-
-  drawDotsForFigure(ctx, figure, hoveredDot)
+  drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
 const drawOvalSkeleton = (ctx, pointA, pointB, color, width) => {
@@ -401,12 +390,10 @@ export const drawRectangle = (ctx, figure, updateRainbowColorDeg, colorList) => 
   drawRectangleSkeleton(ctx, pointA, pointB, color, width)
 }
 
-export const drawRectangleActive = (ctx, figure, hoveredDot, colorList) => {
+export const drawRectangleActive = (ctx, figure, hoveredDot) => {
   const [pointA, pointB] = figure.points
-  const [color, width] = activeColorAndWidth(figure, colorList)
 
-  drawRectangleSkeleton(ctx, pointA, pointB, color, width)
-  drawDotsForFigure(ctx, figure, hoveredDot)
+  drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
 const drawRectangleSkeleton = (ctx, pointA, pointB, color, width) => {
@@ -489,37 +476,45 @@ export const drawEraserTail = (ctx, figure) => {
 }
 
 export const drawText = (ctx, figure, updateRainbowColorDeg, isActive, hoveredDot, colorList) => {
-  const { points: [startAt], text, scale, width, height } = figure;
+  const { points: [startAt], text, scale, width, height, widthIndex } = figure;
 
   const [color, fontSize, font_y_offset_compensation] = detectColorAndFontSize(ctx, figure, updateRainbowColorDeg, colorList)
 
-  drawTextSkeleton(ctx, startAt, text, color, fontSize, font_y_offset_compensation, scale)
+  drawTextSkeleton(ctx, startAt, text, color, fontSize, font_y_offset_compensation, scale, width, widthIndex)
 
   if (isActive) {
-    const [startX, startY] = startAt;
-    const endX = startX + width * scale;
-    const endY = startY + height * scale;
+    const endAt = [
+      startAt[0] + width * scale,
+      startAt[1] + height * scale,
+    ];
 
-    const startXwithMargin = startX - dotTextMargin
-    const startYwithMargin = startY - dotTextMargin
-    const endXwithMargin = endX + dotTextMargin
-    const endYwithMargin = endY + dotTextMargin
-
-    drawSelectionBox(ctx, startXwithMargin, startYwithMargin, endXwithMargin, endYwithMargin)
-
-    drawDot(ctx, [startXwithMargin, startYwithMargin], hoveredDot === 'pointAScale')
-    drawDot(ctx, [endXwithMargin,   endYwithMargin],   hoveredDot === 'pointBScale')
-    drawDot(ctx, [startXwithMargin, endYwithMargin],   hoveredDot === 'pointCScale')
-    drawDot(ctx, [endXwithMargin,   startYwithMargin], hoveredDot === 'pointDScale')
+    drawSelectionBoxWithDots(ctx, startAt, endAt, hoveredDot)
+    drawTextAutoResizeHandle(ctx, figure);
 
     // FOR DEV: Обведення прямокутника
     // ctx.strokeStyle = "red";
     // ctx.lineWidth = 1;
-    // ctx.strokeRect(startX, startY, width * scale, height * scale);
+    // ctx.strokeRect(...startAt, width * scale, height * scale);
   }
 }
 
-const drawTextSkeleton = (ctx, [startX, startY], text, color, fontSize, font_y_offset_compensation, scale) => {
+const drawTextAutoResizeHandle = (ctx, figure) => {
+  if (figure.autoResize) return;
+
+  const handle = getTextAutoResizeHandle(figure);
+  if (!handle) return;
+
+  ctx.lineWidth = dotStrokeWidth;
+  ctx.strokeStyle = dotBorderColor;
+  ctx.lineCap = 'round';
+
+  ctx.beginPath();
+  ctx.moveTo(...handle.startAt);
+  ctx.lineTo(...handle.endAt);
+  ctx.stroke();
+}
+
+const drawTextSkeleton = (ctx, [startX, startY], text, color, fontSize, font_y_offset_compensation, scale, width, widthIndex) => {
   ctx.save();
   ctx.translate(startX, startY);
   ctx.scale(scale, scale);
@@ -530,7 +525,8 @@ const drawTextSkeleton = (ctx, [startX, startY], text, color, fontSize, font_y_o
 
   const lineHeightMultiplier = 1.25;
 
-  const lines = text.split('\n');
+  const lines = getWrappedTextLines(text, widthIndex, width);
+
   const lineHeight = fontSize * lineHeightMultiplier;
 
   lines.forEach((line, index) => {
@@ -546,17 +542,18 @@ const drawSelectionBox = (ctx, startX, startY, endX, endY) => {
   ctx.strokeRect(startX, startY, endX - startX, endY - startY);
 }
 
-const drawDotsForFigure = (ctx, figure, hoveredDot) => {
-  const [pointA, pointB] = figure.points
-
+const drawTwoDots = (ctx, pointA, pointB, hoveredDot) => {
   drawDot(ctx, pointA, hoveredDot === 'pointA')
   drawDot(ctx, pointB, hoveredDot === 'pointB')
+}
 
-  if (['rectangle', 'oval'].includes(figure.type)) {
-    const [startX, startY] = pointA;
-    const [endX, endY] = pointB;
+const drawSelectionBoxWithDots = (ctx, pointA, pointB, hoveredDot) => {
+  const { pointAwithMargin, pointBwithMargin, pointCwithMargin, pointDwithMargin } = getCornersWithMargin(pointA, pointB)
 
-    drawDot(ctx, [startX, endY], hoveredDot === 'pointC')
-    drawDot(ctx, [endX, startY], hoveredDot === 'pointD')
-  }
+  drawSelectionBox(ctx, ...pointAwithMargin, ...pointBwithMargin)
+
+  drawDot(ctx, pointAwithMargin, hoveredDot === 'pointA')
+  drawDot(ctx, pointBwithMargin, hoveredDot === 'pointB')
+  drawDot(ctx, pointCwithMargin, hoveredDot === 'pointC')
+  drawDot(ctx, pointDwithMargin, hoveredDot === 'pointD')
 }

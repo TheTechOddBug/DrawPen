@@ -1,6 +1,6 @@
 import { getStroke } from "perfect-freehand";
 import { LazyBrush } from "lazy-brush";
-import { widthList, SNAP_ANGLE } from '../constants.js'
+import { widthList, SNAP_ANGLE, dotTextMargin } from '../constants.js'
 
 export function getPerfectPath2D(points, strokeOptions) {
   const stroke = getStroke(points, strokeOptions);
@@ -144,14 +144,39 @@ export const distanceBetweenPoints = (pointA, pointB) => {
   return Math.hypot(endX - startX, endY - startY)
 }
 
+// Reusable 2D canvas context used only for measuring text dimensions.
+let textMeasurementContext;
+
+const getTextMeasurementContext = (widthIndex) => {
+  if (!textMeasurementContext) {
+    const canvas = document.createElement('canvas');
+    textMeasurementContext = canvas.getContext('2d');
+  }
+
+  const fontSize = widthList[widthIndex].font_size;
+
+  textMeasurementContext.font = `${fontSize}px Excalifont`;
+
+  return textMeasurementContext;
+};
+
+const calculateTextLineHeight = (widthIndex) => {
+  const dummyCanvasCtx = getTextMeasurementContext(widthIndex);
+
+  const font_line_height_compensation = widthList[widthIndex].font_line_height_compensation;
+  const standardText = 'bpgyЯФ'; // єталонний текст!
+
+  const standardMetrics = dummyCanvasCtx.measureText(standardText);
+
+  const lineHeight = standardMetrics.actualBoundingBoxAscent
+                      + standardMetrics.actualBoundingBoxDescent
+                      + font_line_height_compensation;
+
+  return lineHeight;
+};
+
 export const calculateCanvasTextWidth = (text, widthIndex) => {
-  const dummyCanvas = document.createElement('canvas');
-  const dummyCanvasCtx = dummyCanvas.getContext('2d');
-
-  const fontSize = widthList[widthIndex].font_size
-  const font_line_height_compensation = widthList[widthIndex].font_line_height_compensation
-
-  dummyCanvasCtx.font = `${fontSize}px Excalifont`;
+  const dummyCanvasCtx = getTextMeasurementContext(widthIndex);
 
   const lines = text.split('\n');
 
@@ -159,16 +184,101 @@ export const calculateCanvasTextWidth = (text, widthIndex) => {
   const maxLineWidth = Math.max(...lines.map(line => dummyCanvasCtx.measureText(line).width));
 
   // Height Detection:
-  const standardText = "bpgyЯФ" // єталонний текст!
-  const standardMetrics = dummyCanvasCtx.measureText(standardText);
-
-  const lineHeight = standardMetrics.actualBoundingBoxAscent
-                      + standardMetrics.actualBoundingBoxDescent
-                      + font_line_height_compensation
+  const lineHeight = calculateTextLineHeight(widthIndex);
 
   const totalHeight = lines.length * lineHeight;
 
   return [maxLineWidth, totalHeight]
+}
+
+export const calculateCanvasTextMinWidth = (widthIndex) => {
+  const [width, _height] = calculateCanvasTextWidth('W', widthIndex);
+
+  return width;
+}
+
+export const calculateCanvasWrappedTextHeight = (text, widthIndex, textAreaWidth) => {
+  const wrappedLines = getWrappedTextLines(text, widthIndex, textAreaWidth);
+
+  const lineHeight = calculateTextLineHeight(widthIndex);
+
+  const totalHeight = wrappedLines.length * lineHeight;
+
+  return totalHeight;
+}
+
+const splitStringToFitWidth = (dummyCanvasCtx, string, textAreaWidth) => {
+  const result = [];
+  let currentPart = '';
+
+  for (const character of string) {
+    const nextPart = `${currentPart}${character}`;
+
+    const nextPartWidth = dummyCanvasCtx.measureText(nextPart).width;
+
+    if (currentPart && nextPartWidth > textAreaWidth) {
+      result.push(currentPart);
+      currentPart = character;
+      continue;
+    }
+
+    currentPart = nextPart;
+  }
+
+  if (currentPart) {
+    result.push(currentPart);
+  }
+
+  return result;
+}
+
+export const getWrappedTextLines = (text, widthIndex, textAreaWidth) => {
+  const dummyCanvasCtx = getTextMeasurementContext(widthIndex);
+
+  const lines = text.split('\n');
+
+  const wrappedLines = [];
+
+  lines.forEach(line => {
+    const tokens = line.split(/(\s+)/).filter(Boolean);
+
+    let currentLine = '';
+    let pendingSpaces = '';
+
+    tokens.forEach(token => {
+      if (/^\s+$/.test(token)) {
+        pendingSpaces += token;
+        return;
+      }
+
+      const nextLine = currentLine + pendingSpaces + token;
+
+      const nextLineWidth = dummyCanvasCtx.measureText(nextLine).width;
+
+      if (nextLineWidth <= textAreaWidth) {
+        currentLine = nextLine;
+        pendingSpaces = '';
+        return;
+      }
+
+      if (currentLine) {
+        wrappedLines.push(currentLine + pendingSpaces);
+        pendingSpaces = '';
+      } else if (pendingSpaces) {
+        wrappedLines.push(pendingSpaces);
+        pendingSpaces = '';
+      }
+
+      const wrappedWordParts = splitStringToFitWidth(dummyCanvasCtx, token, textAreaWidth);
+
+      wrappedLines.push(...wrappedWordParts.slice(0, -1));
+      currentLine = wrappedWordParts.at(-1) || '';
+    });
+
+    wrappedLines.push(currentLine);
+  });
+
+  return wrappedLines;
 }
 
 // https://en.m.wikipedia.org/wiki/Intersection_(geometry)#Two_line_segments
@@ -388,4 +498,58 @@ export const buildArrowArcSegments = (arrowPoints, widthIndex) => {
       arcRadius,
     };
   });
+}
+
+export const getCornersWithMargin = (pointA, pointB) => {
+  const directionX = pointA[0] <= pointB[0] ? 1 : -1;
+  const directionY = pointA[1] <= pointB[1] ? 1 : -1;
+
+  const pointAwithMargin = [
+    pointA[0] - directionX * dotTextMargin,
+    pointA[1] - directionY * dotTextMargin,
+  ];
+
+  const pointBwithMargin = [
+    pointB[0] + directionX * dotTextMargin,
+    pointB[1] + directionY * dotTextMargin,
+  ];
+
+  const pointCwithMargin = [
+    pointAwithMargin[0],
+    pointBwithMargin[1],
+  ];
+
+  const pointDwithMargin = [
+    pointBwithMargin[0],
+    pointAwithMargin[1],
+  ];
+
+  return {
+    pointAwithMargin,
+    pointBwithMargin,
+    pointCwithMargin,
+    pointDwithMargin,
+  };
+}
+
+export const getTextAutoResizeHandle = (figure) => {
+  const { points: [startAt], width, height, scale } = figure;
+  const [startX, startY] = startAt;
+
+  const textAutoResizeHandleSize = 16;
+
+  const scaledWidth = width * scale;
+  const scaledHeight = height * scale;
+
+  if (textAutoResizeHandleSize > scaledHeight * 0.8) {
+    return null;
+  }
+
+  const handleX = startX + scaledWidth + dotTextMargin * 3;
+  const handleY = startY + scaledHeight / 2;
+
+  return {
+    startAt: [handleX, handleY - (textAutoResizeHandleSize / 2)],
+    endAt:   [handleX, handleY + (textAutoResizeHandleSize / 2)],
+  };
 }

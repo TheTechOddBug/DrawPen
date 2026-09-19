@@ -121,7 +121,7 @@ const DrawDesk = ({
         drawLine(ctx, figure, updateRainbowColorDeg, colorList)
 
         if (activeFigureInfo && figure.id === activeFigureInfo.id) {
-          drawLineActive(ctx, figure, activeFigureInfo.hoveredDotName, colorList)
+          drawLineActive(ctx, figure, activeFigureInfo.hoveredDotName)
         }
       }
 
@@ -129,7 +129,7 @@ const DrawDesk = ({
         drawRectangle(ctx, figure, updateRainbowColorDeg, colorList)
 
         if (activeFigureInfo && figure.id === activeFigureInfo.id) {
-          drawRectangleActive(ctx, figure, activeFigureInfo.hoveredDotName, colorList)
+          drawRectangleActive(ctx, figure, activeFigureInfo.hoveredDotName)
         }
       }
 
@@ -137,7 +137,7 @@ const DrawDesk = ({
         drawOval(ctx, figure, updateRainbowColorDeg, colorList)
 
         if (activeFigureInfo && figure.id === activeFigureInfo.id) {
-          drawOvalActive(ctx, figure, activeFigureInfo.hoveredDotName, colorList)
+          drawOvalActive(ctx, figure, activeFigureInfo.hoveredDotName)
         }
       }
 

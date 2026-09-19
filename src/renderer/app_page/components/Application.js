@@ -14,15 +14,20 @@ import {
   getMouseCoordinates,
   distanceBetweenPoints,
   calculateCanvasTextWidth,
+  calculateCanvasWrappedTextHeight,
   applySoftSnap,
   applyAspectRatioLock,
 } from './utils/general.js';
 import {
   isOnFigure,
+  isOnTextAutoResizeHandle,
   isOverFigure,
   areFiguresIntersecting,
   getDotNameOnFigure,
+  getSideNameOnFigure,
   getDotOffsetCoordinates,
+  getSideOffsetCoordinates,
+  getSidePointName,
   dragFigure,
   resizeFigure,
   moveToCoordinates,
@@ -112,7 +117,7 @@ const Application = (settings) => {
       { id: Date.now() + 0, type: 'arrow',     colorIndex: 0, widthIndex: 2, points: [[100, 100], [400, 100]], rainbowColorDeg: (Math.random() * 360) },
       { id: Date.now() + 1, type: 'line',      colorIndex: 0, widthIndex: 2, points: [[100, 200], [400, 200]], rainbowColorDeg: 250 },
       { id: Date.now() + 2, type: 'rectangle', colorIndex: 0, widthIndex: 2, points: [[70, 150], [450, 250]],  rainbowColorDeg: (Math.random() * 360), ratio: 1 },
-      { id: Date.now() + 3, type: 'oval',      colorIndex: 0, widthIndex: 2, points: [[100, 300], [400, 450]], rainbowColorDeg: (Math.random() * 360), ratio: 1 },
+      { id: Date.now() + 3, type: 'oval',      colorIndex: 0, widthIndex: 3, points: [[100, 300], [400, 450]], rainbowColorDeg: (Math.random() * 360), ratio: 1 },
       { id: Date.now() + 4, type: 'text',      colorIndex: 2, widthIndex: 2, points: [[152, 118]],             rainbowColorDeg: (Math.random() * 360), text: 'Hello World', width: 400, height: 150, scale: 1 },
     ]
   }
@@ -846,6 +851,7 @@ const Application = (settings) => {
         activeFigure.width = width;
         activeFigure.height = height;
         activeFigure.scale = 1;
+        activeFigure.autoResize = true;
       }
     }
 
@@ -928,9 +934,16 @@ const Application = (settings) => {
     }
 
     if (['text'].includes(figure.type)) {
-      if (['pointAScale', 'pointBScale'].includes(resizingDotName)) return 'nwse-resize';
-      if (['pointCScale', 'pointDScale'].includes(resizingDotName)) return 'nesw-resize';
+      if (['pointA', 'pointB'].includes(resizingDotName)) return 'nwse-resize';
+      if (['pointC', 'pointD'].includes(resizingDotName)) return 'nesw-resize';
     }
+
+    return 'crosshair';
+  }
+
+  const getResizeCursorBySide = (resizingSideName) => {
+    if (['TopSide', 'BottomSide'].includes(resizingSideName)) return 'ns-resize';
+    if (['LeftSide', 'RightSide'].includes(resizingSideName)) return 'ew-resize';
 
     return 'crosshair';
   }
@@ -938,7 +951,9 @@ const Application = (settings) => {
   const setMouseCursor = (x, y) => {
     if (activeFigureInfo) {
       const activeFigure = findActiveFigure()
+
       const resizingDotName = getDotNameOnFigure(x, y, activeFigure);
+      const resizingSideName = getSideNameOnFigure(x, y, activeFigure);
 
       if (resizingDotName) {
         setActiveHoveredDotName(resizingDotName);
@@ -946,9 +961,21 @@ const Application = (settings) => {
         return
       }
 
+      if (resizingSideName) {
+        setActiveHoveredDotName(null);
+        setCursorType(getResizeCursorBySide(resizingSideName));
+        return
+      }
+
       if (isOverFigure(x, y, activeFigure)) {
         setActiveHoveredDotName(null);
         setCursorType('move');
+        return
+      }
+
+      if (isOnTextAutoResizeHandle(x, y, activeFigure)) {
+        setActiveHoveredDotName(null);
+        setCursorType('pointer');
         return
       }
 
@@ -997,7 +1024,9 @@ const Application = (settings) => {
     if (activeFigureInfo) {
       // Click on dots of the active figure
       const activeFigure = findActiveFigure()
+
       const resizingDotName = getDotNameOnFigure(x, y, activeFigure);
+      const resizingSideName = getSideNameOnFigure(x, y, activeFigure);
 
       if (resizingDotName) {
         const resizingPointerOffset = getDotOffsetCoordinates(activeFigure, resizingDotName, x, y);
@@ -1016,6 +1045,25 @@ const Application = (settings) => {
         return;
       }
 
+      if (resizingSideName) {
+        const resizingSidePointName = getSidePointName(activeFigure, resizingSideName);
+        const resizingPointerOffset = getSideOffsetCoordinates(activeFigure, resizingSideName, resizingSidePointName, x, y);
+
+        setActiveFigureInfo(prev => {
+          if (!prev) return prev;
+
+          return {
+            ...prev,
+            resizing: true,
+            resizingSideName: resizingSideName,
+            resizingSidePointName: resizingSidePointName,
+            resizingPointerOffset: resizingPointerOffset,
+            hoveredDotName: null,
+          };
+        });
+        return;
+      }
+
       if (isOverFigure(x, y, activeFigure)) {
         setActiveFigureInfo(prev => {
           if (!prev) return prev;
@@ -1029,6 +1077,17 @@ const Application = (settings) => {
           };
         });
 
+        return;
+      }
+
+      if (isOnTextAutoResizeHandle(x, y, activeFigure)) {
+        const [width, height] = calculateCanvasTextWidth(activeFigure.text, activeFigure.widthIndex);
+
+        activeFigure.width = width;
+        activeFigure.height = height;
+        activeFigure.autoResize = true;
+
+        setAllFigures([...allFigures]);
         return;
       }
 
@@ -1089,6 +1148,7 @@ const Application = (settings) => {
           rainbowColorDeg: rainbowColorDeg,
           text: '',
           scale: 1,
+          autoResize: true,
         };
 
         setTextEditorContainer(newTextEditor);
@@ -1513,7 +1573,12 @@ const Application = (settings) => {
       return;
     }
 
-    const [width, height] = calculateCanvasTextWidth(cleanedText, activeWidthIndex);
+    let [width, height] = calculateCanvasTextWidth(cleanedText, textEditorContainer.widthIndex);
+
+    if (!textEditorContainer.autoResize) {
+      width = textEditorContainer.width;
+      height = calculateCanvasWrappedTextHeight(cleanedText, textEditorContainer.widthIndex, width);
+    }
 
     const textFigure = {
       id: Date.now(),
@@ -1526,6 +1591,7 @@ const Application = (settings) => {
       scale: textEditorContainer.scale,
       width: width,
       height: height,
+      autoResize: textEditorContainer.autoResize,
     };
 
     setAllFigures([...allFigures, textFigure]);
@@ -1544,6 +1610,8 @@ const Application = (settings) => {
       rainbowColorDeg: pickedFigure.rainbowColorDeg,
       text: pickedFigure.text,
       scale: pickedFigure.scale,
+      width: pickedFigure.width,
+      autoResize: pickedFigure.autoResize,
     };
 
     setTextEditorContainer(newTextEditor);

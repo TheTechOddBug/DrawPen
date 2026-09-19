@@ -5,6 +5,10 @@ import {
   applyAspectRatioLock,
   calcPointsArrow,
   calcSegmentsFlatArrow,
+  getCornersWithMargin,
+  calculateCanvasTextMinWidth,
+  calculateCanvasWrappedTextHeight,
+  getTextAutoResizeHandle,
 } from './general.js';
 
 import {
@@ -185,50 +189,93 @@ const isOverText = (x, y, figure) => {
 }
 
 const isOnTwoDots = (x, y, figure) => {
-  const { points } = figure
-  const [a, b] = points
+  const [pointA, pointB] = figure.points;
 
   const inRadius = withinRadius(x, y)
 
-  if (inRadius(a)) return 'pointA'
-  if (inRadius(b)) return 'pointB'
+  if (inRadius(pointA)) return 'pointA'
+  if (inRadius(pointB)) return 'pointB'
 
   return null
 }
 
 const isOnFourDots = (x, y, figure) => {
-  const { points } = figure
+  const [pointA, pointB] = figure.points;
 
-  const [startX, startY] = points[0];
-  const [endX, endY] = points[1];
-
-  const inRadius = withinRadius(x, y)
-
-  if (inRadius([startX, startY])) return 'pointA'
-  if (inRadius([endX, endY])) return 'pointB'
-  if (inRadius([startX, endY])) return 'pointC'
-  if (inRadius([endX, startY])) return 'pointD'
-
-  return null
+  return getDotNameByPoints(x, y, pointA, pointB);
 }
 
 const isOnTextDots = (x, y, figure) => {
   const { points, width, height, scale } = figure
   const startAt = points[0];
 
-  const startX = startAt[0] - dotTextMargin
-  const startY = startAt[1] - dotTextMargin
-  const endX = startAt[0] + width * scale + dotTextMargin
-  const endY = startAt[1] + height * scale + dotTextMargin
+  const endAt = [
+    startAt[0] + width * scale,
+    startAt[1] + height * scale,
+  ];
+
+  return getDotNameByPoints(x, y, startAt, endAt)
+}
+
+const getDotNameByPoints = (x, y, pointA, pointB) => {
+  const { pointAwithMargin, pointBwithMargin, pointCwithMargin, pointDwithMargin } = getCornersWithMargin(pointA, pointB)
 
   const inRadius = withinRadius(x, y)
 
-  if (inRadius([startX, startY])) return 'pointAScale'
-  if (inRadius([endX, endY])) return 'pointBScale'
-  if (inRadius([startX, endY])) return 'pointCScale'
-  if (inRadius([endX, startY])) return 'pointDScale'
+  if (inRadius(pointAwithMargin)) return 'pointA'
+  if (inRadius(pointBwithMargin)) return 'pointB'
+  if (inRadius(pointCwithMargin)) return 'pointC'
+  if (inRadius(pointDwithMargin)) return 'pointD'
 
   return null
+}
+
+const getSideNameByPoints = (x, y, pointA, pointB) => {
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
+
+  const minX = Math.min(startX, endX) - dotTextMargin;
+  const maxX = Math.max(startX, endX) + dotTextMargin;
+  const minY = Math.min(startY, endY) - dotTextMargin;
+  const maxY = Math.max(startY, endY) + dotTextMargin;
+
+  const distLeft   = Math.abs(x - minX);
+  const distRight  = Math.abs(x - maxX);
+  const distTop    = Math.abs(y - minY);
+  const distBottom = Math.abs(y - maxY);
+
+  const withinHorizontalBounds = x >= minX && x <= maxX;
+  const withinVerticalBounds = y >= minY && y <= maxY;
+
+  const closeToTopEdge    = distTop <= sideHoverTolerance && withinHorizontalBounds;
+  const closeToBottomEdge = distBottom <= sideHoverTolerance && withinHorizontalBounds;
+  const closeToLeftEdge   = distLeft <= sideHoverTolerance && withinVerticalBounds;
+  const closeToRightEdge  = distRight <= sideHoverTolerance && withinVerticalBounds;
+
+  if (closeToTopEdge)    return 'TopSide'
+  if (closeToBottomEdge) return 'BottomSide'
+  if (closeToLeftEdge)   return 'LeftSide'
+  if (closeToRightEdge)  return 'RightSide'
+
+  return null
+}
+
+const isOnFigureSide = (x, y, figure) => {
+  const [pointA, pointB] = figure.points;
+
+  return getSideNameByPoints(x, y, pointA, pointB);
+}
+
+const isOnTextSide = (x, y, figure) => {
+  const { points, width, height, scale } = figure;
+  const startAt = points[0];
+
+  const endAt = [
+    startAt[0] + width * scale,
+    startAt[1] + height * scale,
+  ];
+
+  return getSideNameByPoints(x, y, startAt, endAt);
 }
 
 export const isOnFigure = (x, y, figure) => {
@@ -248,6 +295,16 @@ export const isOnFigure = (x, y, figure) => {
     default:
       return false
   }
+}
+
+export const isOnTextAutoResizeHandle = (x, y, figure) => {
+  if (figure.type !== 'text') return false;
+  if (figure.autoResize) return false;
+
+  const handle = getTextAutoResizeHandle(figure);
+  if (!handle) return false;
+
+  return isOnCurve(x, y, [handle.startAt, handle.endAt], sideHoverTolerance);
 }
 
 const isOverRectangle = (x, y, figure) => {
@@ -488,11 +545,23 @@ export const getDotNameOnFigure = (x, y, figure) => {
     case 'text':
       return isOnTextDots(x, y, figure) // ['pointA', 'pointB', 'pointC', 'pointD', null]
     default:
-      return false
+      return null
   }
 };
 
-export const getDotCoordinates = (figure, dotName) => {
+export const getSideNameOnFigure = (x, y, figure) => {
+  switch (figure.type) {
+    case 'oval':
+    case 'rectangle':
+      return isOnFigureSide(x, y, figure) // ['TopSide', 'BottomSide', 'LeftSide', 'RightSide', null]
+    case 'text':
+      return isOnTextSide(x, y, figure) // ['TopSide', 'BottomSide', 'LeftSide', 'RightSide', null]
+    default:
+      return null
+  }
+};
+
+const getDotCoordinates = (figure, dotName) => {
   if (['line', 'arrow', 'flat_arrow'].includes(figure.type)) {
     if (dotName === 'pointA') return figure.points[0];
     if (dotName === 'pointB') return figure.points[1];
@@ -507,17 +576,17 @@ export const getDotCoordinates = (figure, dotName) => {
     if (dotName === 'pointD') return [pointB[0], pointA[1]];
   }
 
-  if (figure.type === 'text') {
+  if (['text'].includes(figure.type)) {
     const startAt = figure.points[0];
-    const startX = startAt[0] - dotTextMargin;
-    const startY = startAt[1] - dotTextMargin;
-    const endX = startAt[0] + figure.width * figure.scale + dotTextMargin;
-    const endY = startAt[1] + figure.height * figure.scale + dotTextMargin;
+    const startX = startAt[0];
+    const startY = startAt[1];
+    const endX = startAt[0] + figure.width * figure.scale;
+    const endY = startAt[1] + figure.height * figure.scale;
 
-    if (dotName === 'pointAScale') return [startX, startY];
-    if (dotName === 'pointBScale') return [endX, endY];
-    if (dotName === 'pointCScale') return [startX, endY];
-    if (dotName === 'pointDScale') return [endX, startY];
+    if (dotName === 'pointA') return [startX, startY];
+    if (dotName === 'pointB') return [endX, endY];
+    if (dotName === 'pointC') return [startX, endY];
+    if (dotName === 'pointD') return [endX, startY];
   }
 
   return null;
@@ -539,6 +608,97 @@ export const getDotOffsetCoordinates = (figure, dotName, x, y) => {
   };
 }
 
+export const getSidePointName = (figure, sideName) => {
+  if (['text'].includes(figure.type)) {
+    if (sideName === 'TopSide')    return 'pointAScale'
+    if (sideName === 'BottomSide') return 'pointBScale'
+    if (sideName === 'LeftSide')   return 'pointAWidth'
+    if (sideName === 'RightSide')  return 'pointBWidth'
+
+    return null;
+  }
+
+  if (['rectangle', 'oval'].includes(figure.type)) {
+    const [pointA, pointB] = figure.points;
+
+    if (sideName === 'TopSide')    return pointA[1] <= pointB[1] ? 'pointA' : 'pointB';
+    if (sideName === 'BottomSide') return pointA[1] <= pointB[1] ? 'pointB' : 'pointA';
+    if (sideName === 'LeftSide')   return pointA[0] <= pointB[0] ? 'pointA' : 'pointB';
+    if (sideName === 'RightSide')  return pointA[0] <= pointB[0] ? 'pointB' : 'pointA';
+  }
+
+  return null;
+}
+
+export const getSideOffsetCoordinates = (figure, sideName, sidePointName, x, y) => {
+  if (!sidePointName) {
+    return {
+      offsetX: 0,
+      offsetY: 0,
+    };
+  }
+
+  if (['text'].includes(figure.type)) {
+    const { points: [startAt], scale, width, height } = figure;
+
+    const [startX, startY] = startAt;
+
+    const endX = startX + width * scale;
+    const endY = startY + height * scale;
+
+    if (sidePointName === 'pointAScale') {
+      return {
+        offsetX: 0,
+        offsetY: y - startY,
+      };
+    }
+
+    if (sidePointName === 'pointBScale') {
+      return {
+        offsetX: 0,
+        offsetY: y - endY,
+      };
+    }
+
+    if (sidePointName === 'pointAWidth') {
+      return {
+        offsetX: x - startX,
+        offsetY: 0,
+      };
+    }
+
+    if (sidePointName === 'pointBWidth') {
+      return {
+        offsetX: x - endX,
+        offsetY: 0,
+      };
+    }
+  }
+
+  if (['rectangle', 'oval'].includes(figure.type)) {
+    const sidePoint = sidePointName === 'pointA' ? figure.points[0] : figure.points[1];
+
+    if (['TopSide', 'BottomSide'].includes(sideName)) {
+      return {
+        offsetX: 0,
+        offsetY: y - sidePoint[1],
+      };
+    }
+
+    if (['LeftSide', 'RightSide'].includes(sideName)) {
+      return {
+        offsetX: x - sidePoint[0],
+        offsetY: 0,
+      };
+    }
+  }
+
+  return {
+    offsetX: 0,
+    offsetY: 0,
+  };
+}
+
 export const dragFigure = (figure, oldCoordinates, newCoordinates) => {
   const offsetX = newCoordinates.x - oldCoordinates.x;
   const offsetY = newCoordinates.y - oldCoordinates.y;
@@ -549,65 +709,75 @@ export const dragFigure = (figure, oldCoordinates, newCoordinates) => {
   })
 }
 
-const anchorPoints = {
-  pointAScale: (f) => [
-    f.points[0][0] - dotTextMargin,
-    f.points[0][1] - dotTextMargin
+const textPointCoordinates = {
+  pointA: (f) => [
+    f.points[0][0],
+    f.points[0][1],
   ],
-  pointBScale: (f) => [
-    f.points[0][0] + f.width * f.scale + dotTextMargin,
-    f.points[0][1] + f.height * f.scale + dotTextMargin
+  pointB: (f) => [
+    f.points[0][0] + f.width * f.scale,
+    f.points[0][1] + f.height * f.scale,
   ],
-  pointCScale: (f) => [
-    f.points[0][0] - dotTextMargin,
-    f.points[0][1] + f.height * f.scale + dotTextMargin
+  pointC: (f) => [
+    f.points[0][0],
+    f.points[0][1] + f.height * f.scale,
   ],
-  pointDScale: (f) => [
-    f.points[0][0] + f.width * f.scale + dotTextMargin,
-    f.points[0][1] - dotTextMargin
+  pointD: (f) => [
+    f.points[0][0] + f.width * f.scale,
+    f.points[0][1]
   ],
 };
 
-export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
-  const { resizingDotName, resizingPointerOffset } = activeFigureInfo;
-
-  x -= resizingPointerOffset.offsetX;
-  y -= resizingPointerOffset.offsetY;
+const resizeLineByDots = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  const { resizingDotName } = activeFigureInfo;
 
   if (isShiftPressed) {
-    if (['line', 'arrow', 'flat_arrow'].includes(figure.type)) {
-      let pointA = figure.points[0];
-      let pointB = figure.points[1];
+    let pointA = figure.points[0];
+    let pointB = figure.points[1];
 
-      let startPoint
+    let startPoint
 
-      if (resizingDotName === 'pointA') { startPoint = pointB; }
-      if (resizingDotName === 'pointB') { startPoint = pointA; }
+    if (resizingDotName === 'pointA') { startPoint = pointB; }
+    if (resizingDotName === 'pointB') { startPoint = pointA; }
 
-      const result = applySoftSnap(startPoint[0], startPoint[1], x, y);
+    const result = applySoftSnap(startPoint[0], startPoint[1], x, y);
 
-      x = result.x;
-      y = result.y;
-    }
+    x = result.x;
+    y = result.y;
+  }
 
-    if (['rectangle', 'oval'].includes(figure.type)) {
-      let pointA = figure.points[0];
-      let pointB = figure.points[1];
-      let pointC = [figure.points[0][0], figure.points[1][1]];
-      let pointD = [figure.points[1][0], figure.points[0][1]];
+  switch (resizingDotName) {
+    case 'pointA':
+      figure.points[0][0] = x
+      figure.points[0][1] = y
+      break;
+    case 'pointB':
+      figure.points[1][0] = x
+      figure.points[1][1] = y
+      break;
+  }
+}
 
-      let startPoint
+const resizeShapeByDots = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  const { resizingDotName } = activeFigureInfo;
 
-      if (resizingDotName === 'pointA') { startPoint = pointB; }
-      if (resizingDotName === 'pointB') { startPoint = pointA; }
-      if (resizingDotName === 'pointC') { startPoint = pointD; }
-      if (resizingDotName === 'pointD') { startPoint = pointC; }
+  if (isShiftPressed) {
+    let pointA = figure.points[0];
+    let pointB = figure.points[1];
+    let pointC = [figure.points[0][0], figure.points[1][1]];
+    let pointD = [figure.points[1][0], figure.points[0][1]];
 
-      const result = applyAspectRatioLock(startPoint[0], startPoint[1], x, y, figure.ratio);
+    let startPoint
 
-      x = result.x;
-      y = result.y;
-    }
+    if (resizingDotName === 'pointA') { startPoint = pointB; }
+    if (resizingDotName === 'pointB') { startPoint = pointA; }
+    if (resizingDotName === 'pointC') { startPoint = pointD; }
+    if (resizingDotName === 'pointD') { startPoint = pointC; }
+
+    const result = applyAspectRatioLock(startPoint[0], startPoint[1], x, y, figure.ratio);
+
+    x = result.x;
+    y = result.y;
   }
 
   switch (resizingDotName) {
@@ -627,11 +797,18 @@ export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed })
       figure.points[1][0] = x
       figure.points[0][1] = y
       break;
-    case 'pointAScale': {
-      const [anchorX, anchorY] = anchorPoints.pointAScale(figure);
+  }
+}
 
-      const dx = (anchorX - x) / figure.width;
-      const dy = (anchorY - y) / figure.height;
+const resizeTextByDots = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  const { resizingDotName } = activeFigureInfo;
+
+  switch (resizingDotName) {
+    case 'pointA': {
+      const [pointX, pointY] = textPointCoordinates.pointA(figure);
+
+      const dx = (pointX - x) / figure.width;
+      const dy = (pointY - y) / figure.height;
 
       const delta = Math.max(dx, dy);
       const newScale = Math.max(figureMinScale, figure.scale + delta);
@@ -643,11 +820,11 @@ export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed })
       figure.scale = newScale;
       break;
     }
-    case 'pointBScale': {
-      const [anchorX, anchorY] = anchorPoints.pointBScale(figure);
+    case 'pointB': {
+      const [pointX, pointY] = textPointCoordinates.pointB(figure);
 
-      const dx = (x - anchorX) / figure.width;
-      const dy = (y - anchorY) / figure.height;
+      const dx = (x - pointX) / figure.width;
+      const dy = (y - pointY) / figure.height;
 
       const delta = Math.max(dx, dy);
       const newScale = Math.max(figureMinScale, figure.scale + delta);
@@ -655,11 +832,11 @@ export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed })
       figure.scale = newScale
       break;
     }
-    case 'pointCScale': {
-      const [anchorX, anchorY] = anchorPoints.pointCScale(figure);
+    case 'pointC': {
+      const [pointX, pointY] = textPointCoordinates.pointC(figure);
 
-      const dx = (anchorX - x) / figure.width;
-      const dy = (y - anchorY) / figure.height;
+      const dx = (pointX - x) / figure.width;
+      const dy = (y - pointY) / figure.height;
 
       const delta = Math.max(dx, dy);
       const newScale = Math.max(figureMinScale, figure.scale + delta);
@@ -670,11 +847,11 @@ export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed })
       figure.scale = newScale;
       break;
     }
-    case 'pointDScale': {
-      const [anchorX, anchorY] = anchorPoints.pointDScale(figure);
+    case 'pointD': {
+      const [pointX, pointY] = textPointCoordinates.pointD(figure);
 
-      const dx = (x - anchorX) / figure.width;
-      const dy = (anchorY - y) / figure.height;
+      const dx = (x - pointX) / figure.width;
+      const dy = (pointY - y) / figure.height;
 
       const delta = Math.max(dx, dy);
       const newScale = Math.max(figureMinScale, figure.scale + delta);
@@ -685,6 +862,162 @@ export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed })
       figure.scale = newScale;
       break;
     }
+  }
+}
+
+const resizeFigureByDot = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  if (['line', 'arrow', 'flat_arrow'].includes(figure.type)) {
+    resizeLineByDots(figure, activeFigureInfo, { x, y, isShiftPressed });
+    return;
+  }
+
+  if (['rectangle', 'oval'].includes(figure.type)) {
+    resizeShapeByDots(figure, activeFigureInfo, { x, y, isShiftPressed });
+    return;
+  }
+
+  if (['text'].includes(figure.type)) {
+    resizeTextByDots(figure, activeFigureInfo, { x, y, isShiftPressed });
+    return;
+  }
+}
+
+const resizeTextBySide = (figure, activeFigureInfo, { x, y }) => {
+  const { resizingSidePointName } = activeFigureInfo;
+
+  // Зберігаємо bottom-right на місці
+  if (resizingSidePointName === 'pointAScale') {
+    const [, anchorY] = textPointCoordinates.pointB(figure);
+
+    const dy = (anchorY - y) / figure.height;
+
+    const newScale = Math.max(figureMinScale, dy);
+
+    const scaleDiff = newScale - figure.scale;
+
+    figure.points[0][0] -= figure.width * scaleDiff;
+    figure.points[0][1] -= figure.height * scaleDiff;
+    figure.scale = newScale;
+    return;
+  }
+
+  // Зберігаємо top-left на місці
+  if (resizingSidePointName === 'pointBScale') {
+    const [, anchorY] = textPointCoordinates.pointA(figure);
+
+    const dy = (y - anchorY) / figure.height;
+
+    const newScale = Math.max(figureMinScale, dy);
+
+    figure.scale = newScale;
+    return;
+  }
+
+  if (resizingSidePointName === 'pointAWidth') {
+    const [anchorX] = textPointCoordinates.pointB(figure);
+
+    const dx = (anchorX - x) / figure.scale;
+
+    const minWidth = calculateCanvasTextMinWidth(figure.widthIndex);
+
+    const newWidth = Math.max(minWidth, dx);
+    const newHeight = calculateCanvasWrappedTextHeight(figure.text, figure.widthIndex, newWidth);
+
+    figure.points[0][0] = anchorX - newWidth * figure.scale;
+    figure.width = newWidth;
+    figure.height = newHeight;
+    figure.autoResize = false;
+    return;
+  }
+
+  if (resizingSidePointName === 'pointBWidth') {
+    const [anchorX] = textPointCoordinates.pointA(figure);
+
+    const dx = (x - anchorX) / figure.scale;
+
+    const minWidth = calculateCanvasTextMinWidth(figure.widthIndex);
+
+    const newWidth = Math.max(minWidth, dx);
+    const newHeight = calculateCanvasWrappedTextHeight(figure.text, figure.widthIndex, newWidth);
+
+    figure.width = newWidth;
+    figure.height = newHeight;
+    figure.autoResize = false;
+    return;
+  }
+}
+
+const resizeShapeBySide = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  const { resizingSideName, resizingSidePointName } = activeFigureInfo;
+
+  const [pointA, pointB] = figure.points;
+  const resizingPoint = resizingSidePointName === 'pointA' ? pointA : pointB;
+
+  if (['TopSide', 'BottomSide'].includes(resizingSideName)) {
+    resizingPoint[1] = y;
+
+    if (isShiftPressed) {
+      const centerX = (pointA[0] + pointB[0]) / 2;
+      const directionX = pointA[0] <= pointB[0] ? 1 : -1;
+      const width = Math.abs(pointB[1] - pointA[1]) * figure.ratio;
+
+      pointA[0] = centerX - directionX * width / 2;
+      pointB[0] = centerX + directionX * width / 2;
+    }
+
+    return;
+  }
+
+  if (['LeftSide', 'RightSide'].includes(resizingSideName)) {
+    resizingPoint[0] = x;
+
+    if (isShiftPressed) {
+      const centerY = (pointA[1] + pointB[1]) / 2;
+      const directionY = pointA[1] <= pointB[1] ? 1 : -1;
+      const height = Math.abs(pointB[0] - pointA[0]) / figure.ratio;
+
+      pointA[1] = centerY - directionY * height / 2;
+      pointB[1] = centerY + directionY * height / 2;
+    }
+
+    return;
+  }
+};
+
+const resizeFigureBySide = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  if (['rectangle', 'oval'].includes(figure.type)) {
+    resizeShapeBySide(figure, activeFigureInfo, { x, y, isShiftPressed });
+    return;
+  }
+
+  if (['text'].includes(figure.type)) {
+    resizeTextBySide(figure, activeFigureInfo, { x, y, isShiftPressed });
+    return;
+  }
+}
+
+export const resizeFigure = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
+  const {
+    resizingDotName,
+    resizingSideName,
+    resizingSidePointName,
+    resizingPointerOffset,
+  } = activeFigureInfo;
+
+  const coordinates = {
+    x: x - resizingPointerOffset.offsetX,
+    y: y - resizingPointerOffset.offsetY,
+    isShiftPressed,
+  };
+
+  if (resizingDotName) {
+    resizeFigureByDot(figure, activeFigureInfo, coordinates);
+    return;
+  }
+
+  if (resizingSideName && resizingSidePointName) {
+    resizeFigureBySide(figure, activeFigureInfo, coordinates);
+    return;
   }
 }
 

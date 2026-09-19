@@ -6,14 +6,23 @@
   font-family: 'Excalifont';
   min-width: 1px;
   display: inline-block;
+
   white-space: pre;
+
   outline: none;
   background: transparent;
   padding: 0;
   margin: 0;
   overflow: hidden; // Select Text issue
-  transform-origin: top left; // For Scale
+
+  &.fixed-width {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    outline: 1px dashed var(--dot-border-color);
+    outline-offset: var(--dot-text-margin);
+  }
 
   // FOR DEV: Обведення прямокутника
-  // border: 1px solid green;
+  // border: 1px dashed green;
 }
