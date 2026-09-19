@@ -1,7 +1,7 @@
 import './TextEditor.scss';
 
 import React, { useRef, useEffect } from 'react';
-import { widthList } from "../constants.js";
+import { widthList, lineHeightMultiplier } from "../constants.js";
 import { hslTextGradientStops, getCursorColor } from "./drawer/figures.js";
 
 const TextEditor = ({
@@ -113,6 +113,7 @@ const TextEditor = ({
         width: width,
         color: color,
         fontSize: fontSize,
+        '--line-height-multiplier': lineHeightMultiplier,
       }}
     />
   );

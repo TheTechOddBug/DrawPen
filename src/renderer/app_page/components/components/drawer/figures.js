@@ -23,6 +23,7 @@ import {
   eraserTailColor,
   highlighterAlpha,
   eraserAlpha,
+  lineHeightMultiplier,
 } from '../../constants.js';
 
 const hslColor = (degree) => {
@@ -522,8 +523,6 @@ const drawTextSkeleton = (ctx, [startX, startY], text, color, fontSize, font_y_o
   ctx.textBaseline = "top";
   ctx.font = `${fontSize}px Excalifont`;
   ctx.fillStyle = color;
-
-  const lineHeightMultiplier = 1.25;
 
   const lines = getWrappedTextLines(text, widthIndex, width);
 

@@ -1,6 +1,6 @@
 import { getStroke } from "perfect-freehand";
 import { LazyBrush } from "lazy-brush";
-import { widthList, SNAP_ANGLE, dotTextMargin } from '../constants.js'
+import { widthList, SNAP_ANGLE, dotTextMargin, lineHeightMultiplier } from '../constants.js'
 
 export function getPerfectPath2D(points, strokeOptions) {
   const stroke = getStroke(points, strokeOptions);
@@ -161,18 +161,9 @@ const getTextMeasurementContext = (widthIndex) => {
 };
 
 const calculateTextLineHeight = (widthIndex) => {
-  const dummyCanvasCtx = getTextMeasurementContext(widthIndex);
+  const fontSize = widthList[widthIndex].font_size;
 
-  const font_line_height_compensation = widthList[widthIndex].font_line_height_compensation;
-  const standardText = 'bpgyЯФ'; // єталонний текст!
-
-  const standardMetrics = dummyCanvasCtx.measureText(standardText);
-
-  const lineHeight = standardMetrics.actualBoundingBoxAscent
-                      + standardMetrics.actualBoundingBoxDescent
-                      + font_line_height_compensation;
-
-  return lineHeight;
+  return fontSize * lineHeightMultiplier;
 };
 
 export const calculateCanvasTextWidth = (text, widthIndex) => {

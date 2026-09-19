@@ -2,7 +2,7 @@
   position: fixed;
   // top: 0;
   // left: 0;
-  line-height: 1.25; // lineHeightMultiplier
+  line-height: var(--line-height-multiplier);
   font-family: 'Excalifont';
   min-width: 1px;
   display: inline-block;
