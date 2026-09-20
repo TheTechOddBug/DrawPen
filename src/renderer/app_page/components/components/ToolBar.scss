@@ -1,7 +1,5 @@
 :root {
   --toolbar-height: 44px;
-  --toolbar-background-color: #FFFFFF;
-  --toolbar-border-color: #020202;
   --toolbar-width--full: calc(10px + 9*36px + 2*9px + 10px);
   --toolbar-width--mini: calc(10px + 36px + 10px);
   --toolbar-switch-duration: 0.3s;
@@ -277,7 +275,7 @@
       .toolbar__color-picker {
         width: 24px;
         height: 24px;
-        border: 2px solid #000;
+        border: 2px solid var(--toolbar-border-color);
         box-sizing: border-box;
         border-radius: 5px;
       }

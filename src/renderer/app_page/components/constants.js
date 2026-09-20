@@ -13,6 +13,7 @@ export const fadeOutDurationTimeMsMax = 5000;
 export const fadeOutDestroyAfterMs = 300;
 export const shortcutHintHoldDelayMs = 500;
 export const updateStoreDelay = 300;
+export const toolbarViewportMargin = 10; // Equals to "--border-size"*2
 
 export const eraserTime = 100;
 export const rainbowScaleFactor = 0.03;

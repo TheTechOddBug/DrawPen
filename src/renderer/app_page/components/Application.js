@@ -4,6 +4,7 @@ import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { throttle, debounce } from 'lodash';
 import DrawDesk from './components/DrawDesk.js';
 import ToolBar from './components/ToolBar.js';
+import FigureToolbar from './components/FigureToolbar.js';
 import CuteCursor from './components/CuteCursor.js';
 import RippleEffect from './components/RippleEffect.js';
 import Toast from './components/Toast.js';
@@ -429,16 +430,7 @@ const Application = (settings) => {
       }
       case 'delete':
       case 'backspace': {
-        if (activeFigureInfo) {
-          const figureToRemove = allFigures.find(figure => figure.id === activeFigureInfo.id);
-          const newActiveFigures = allFigures.filter(figure => figure.id !== activeFigureInfo.id)
-
-          setActiveFigureInfo(null);
-          setAllFigures(newActiveFigures);
-
-          setUndoStackFigures(prevUndoStack => [...prevUndoStack, { type: 'remove', figures: [figureToRemove] }]);
-          setRedoStackFigures([]);
-        }
+        handleDeleteActiveFigure();
         break;
       }
       case 'enter': {
@@ -700,15 +692,6 @@ const Application = (settings) => {
     };
   }, [showWhiteboard, showToolbar, activeTool, activeColorIndex, activeWidthIndex, toolbarLastActiveBrush, toolbarLastActiveFigure, toolbarCollapsed]);
 
-  useEffect(() => {
-    if (!activeFigureInfo) { return }
-
-    const activeFigure = findActiveFigure();
-
-    setActiveColorIndex(activeFigure.colorIndex)
-    setActiveWidthIndex(activeFigure.widthIndex)
-  }, [activeFigureInfo])
-
   const allLasersFiguresByRef = useRef(null)
   useEffect(() => {
     allLasersFiguresByRef.current = allLaserFigures;
@@ -835,34 +818,51 @@ const Application = (settings) => {
   }
 
   const handleChangeColor = (newColorIndex) => {
-    if (activeFigureInfo) {
-      const activeFigure = findActiveFigure()
-
-      activeFigure.colorIndex = newColorIndex
-    }
-
     setActiveColorIndex(newColorIndex);
-    setAllFigures([...allFigures]);
   };
 
   const handleChangeWidth = (newWidthIndex) => {
-    if (activeFigureInfo) {
-      const activeFigure = findActiveFigure()
+    setActiveWidthIndex(newWidthIndex);
+  };
 
-      activeFigure.widthIndex = newWidthIndex
+  const handleChangeFigureColor = (newColorIndex) => {
+    if (!activeFigureInfo) return;
 
-      if (activeFigure.type === 'text') {
-        const [width, height] = calculateCanvasTextWidth(activeFigure.text, activeFigure.widthIndex);
+    const activeFigure = findActiveFigure()
 
-        activeFigure.width = width;
-        activeFigure.height = height;
-        activeFigure.scale = 1;
-        activeFigure.autoResize = true;
-      }
+    activeFigure.colorIndex = newColorIndex
+
+    setAllFigures([...allFigures]);
+  };
+
+  const handleChangeFigureWidth = (newWidthIndex) => {
+    if (!activeFigureInfo) return;
+
+    const activeFigure = findActiveFigure()
+
+    activeFigure.widthIndex = newWidthIndex
+
+    if (activeFigure.type === 'text') {
+      const [width, height] = calculateCanvasTextWidth(activeFigure.text, newWidthIndex);
+
+      activeFigure.width = width;
+      activeFigure.height = height;
+      activeFigure.scale = 1;
+      activeFigure.autoResize = true;
     }
 
-    setActiveWidthIndex(newWidthIndex);
     setAllFigures([...allFigures]);
+  };
+
+  const handleDeleteActiveFigure = () => {
+    if (!activeFigureInfo) return;
+
+    const activeFigure = findActiveFigure()
+
+    setActiveFigureInfo(null);
+    setAllFigures(allFigures.filter((figure) => figure.id !== activeFigureInfo.id));
+    setUndoStackFigures((prevUndoStack) => [...prevUndoStack, { type: 'remove', figures: [activeFigure] }]);
+    setRedoStackFigures([]);
   };
 
   const handleChangeTool = (toolName) => {
@@ -1635,6 +1635,9 @@ const Application = (settings) => {
     ['permanent', 'fade', 'dot'].includes(cuteCursorMode) &&
     !(cuteCursorMode === 'dot' && canvasCursorType !== 'default');
 
+  const activeFigure = activeFigureInfo && findActiveFigure();
+  const showSubToolbar = activeFigure && !isActiveFigureMoving();
+
   return (
     <div id="root_wrapper" className={manipulation} onPointerMove={handleMousePosition} onContextMenu={handleContextMenu}>
 
@@ -1715,6 +1718,19 @@ const Application = (settings) => {
         handleChangeTool={handleChangeTool}
         colorList={colorList}
       />
+
+      {
+        showSubToolbar &&
+          <FigureToolbar
+            key={activeFigure.id}
+            figure={activeFigure}
+            colorList={colorList}
+            onChangeColor={handleChangeFigureColor}
+            onChangeWidth={handleChangeFigureWidth}
+            onDelete={handleDeleteActiveFigure}
+            Icons={Icons}
+          />
+      }
 
       {
         showToolbar &&

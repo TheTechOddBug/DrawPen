@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import "./ToolBar.scss";
-import { brushList, shapeList, widthList, shortcutHintHoldDelayMs, updateStoreDelay } from "../constants.js";
+import { brushList, shapeList, widthList, shortcutHintHoldDelayMs, toolbarViewportMargin, updateStoreDelay } from "../constants.js";
 
 const STICKY_DISTANCE = 15;
-const ZONE_BORDER = 10; // Equals to "--border-size"*2
 
 const humanizedKey = (key) => {
   const keyMap = {
@@ -147,10 +146,10 @@ const ToolBar = ({
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
 
-    const minX = ZONE_BORDER;
-    const minY = ZONE_BORDER;
-    const maxX = Math.max(ZONE_BORDER, windowWidth - ZONE_BORDER - toolbarWidth);
-    const maxY = Math.max(ZONE_BORDER, windowHeight - ZONE_BORDER - toolbarHeight);
+    const minX = toolbarViewportMargin;
+    const minY = toolbarViewportMargin;
+    const maxX = Math.max(toolbarViewportMargin, windowWidth - toolbarViewportMargin - toolbarWidth);
+    const maxY = Math.max(toolbarViewportMargin, windowHeight - toolbarViewportMargin - toolbarHeight);
 
     if (!withSticky) {
       return {
@@ -159,10 +158,10 @@ const ToolBar = ({
       };
     }
 
-    const leftEdge = STICKY_DISTANCE + ZONE_BORDER;
-    const topEdge = STICKY_DISTANCE + ZONE_BORDER;
-    const rightEdge = windowWidth - ZONE_BORDER - STICKY_DISTANCE;
-    const bottomEdge = windowHeight - ZONE_BORDER - STICKY_DISTANCE;
+    const leftEdge = STICKY_DISTANCE + toolbarViewportMargin;
+    const topEdge = STICKY_DISTANCE + toolbarViewportMargin;
+    const rightEdge = windowWidth - toolbarViewportMargin - STICKY_DISTANCE;
+    const bottomEdge = windowHeight - toolbarViewportMargin - STICKY_DISTANCE;
 
     let nextX = x;
     let nextY = y;
