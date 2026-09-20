@@ -14,10 +14,12 @@ import {
   drawArrowActive,
   drawFlatArrow,
   drawFlatArrowActive,
-  drawOval,
-  drawOvalActive,
   drawRectangle,
   drawRectangleActive,
+  drawDiamond,
+  drawDiamondActive,
+  drawOval,
+  drawOvalActive,
   drawLaser,
   drawEraserTail,
   drawText,
@@ -130,6 +132,14 @@ const DrawDesk = ({
 
         if (activeFigureInfo && figure.id === activeFigureInfo.id) {
           drawRectangleActive(ctx, figure, activeFigureInfo.hoveredDotName)
+        }
+      }
+
+      if (figure.type === 'diamond') {
+        drawDiamond(ctx, figure, updateRainbowColorDeg, colorList)
+
+        if (activeFigureInfo && figure.id === activeFigureInfo.id) {
+          drawDiamondActive(ctx, figure, activeFigureInfo.hoveredDotName)
         }
       }
 

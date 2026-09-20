@@ -53,8 +53,9 @@ const ToolBar = ({
     arrow:       { title: "Arrow",       alias: "A", mainPanel: "2", subPanel: "1" },
     flat_arrow:  { title: "Flat Arrow",  alias: "A", mainPanel: "2", subPanel: "2" },
     rectangle:   { title: "Rectangle",   alias: "R", mainPanel: "2", subPanel: "3" },
-    oval:        { title: "Oval",        alias: "O", mainPanel: "2", subPanel: "4" },
-    line:        { title: "Line",                    mainPanel: "2", subPanel: "5" },
+    diamond:     { title: "Diamond",     alias: "D", mainPanel: "2", subPanel: "4" },
+    oval:        { title: "Oval",        alias: "O", mainPanel: "2", subPanel: "5" },
+    line:        { title: "Line",                    mainPanel: "2", subPanel: "6" },
     text:        { title: "Text",        alias: "T", mainPanel: "3" },
     highlighter: { title: "Highlighter", alias: "H", mainPanel: "4" },
     laser:       { title: "Laser",       alias: "L", mainPanel: "5" },
@@ -70,6 +71,7 @@ const ToolBar = ({
     arrow: <Icons.Arrow />,
     flat_arrow: <Icons.FlatArrow />,
     rectangle: <Icons.Rectangle />,
+    diamond: <Icons.Diamond />,
     oval: <Icons.Oval />,
     line: <Icons.Line />,
     text: <Icons.Text />,
@@ -504,6 +506,12 @@ const ToolBar = ({
                   <Icons.Rectangle />
                 </button>
                 <div className="toolbar__shortcut-hint">{renderToolShortcutHint("rectangle", "subPanel")}</div>
+              </li>
+              <li className={activeTool === "diamond" ? "active" : undefined} onClick={() => pickTool("diamond")}>
+                <button tabIndex={-1} title={renderToolTitle("diamond", "subPanel")}>
+                  <Icons.Diamond />
+                </button>
+                <div className="toolbar__shortcut-hint">{renderToolShortcutHint("diamond", "subPanel")}</div>
               </li>
               <li className={activeTool === "oval" ? "active" : undefined} onClick={() => pickTool("oval")}>
                 <button tabIndex={-1} title={renderToolTitle("oval", "subPanel")}>

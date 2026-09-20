@@ -140,13 +140,13 @@ const isOnOval = (x, y, figure) => {
 }
 
 const isOnRectangle = (x, y, figure) => {
-  const { points, widthIndex } = figure
+  const { points: [pointA, pointB], widthIndex } = figure
 
   const baseTolerance = 5;
   const tolerance = baseTolerance + widthList[widthIndex].figure_size / 2
 
-  const [startX, startY] = points[0];
-  const [endX, endY] = points[1];
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
 
   const minX = Math.min(startX, endX);
   const maxX = Math.max(startX, endX);
@@ -167,6 +167,28 @@ const isOnRectangle = (x, y, figure) => {
   const closeToRightEdge  = distRight <= tolerance && withinVerticalBounds;
 
   return (closeToTopEdge || closeToBottomEdge || closeToLeftEdge || closeToRightEdge)
+}
+
+const isOnDiamond = (x, y, figure) => {
+  const { points: [pointA, pointB] } = figure
+
+  const baseTolerance = 5;
+  const tolerance = baseTolerance + widthList[figure.widthIndex].figure_size / 2;
+
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
+
+  const centerX = (startX + endX) / 2;
+  const centerY = (startY + endY) / 2;
+
+  const topCorner    = [centerX, Math.min(startY, endY)];
+  const rightCorner  = [Math.max(startX, endX), centerY];
+  const bottomCorner = [centerX, Math.max(startY, endY)];
+  const leftCorner   = [Math.min(startX, endX), centerY];
+
+  const roundedDiamondPoints = [topCorner, rightCorner, bottomCorner, leftCorner, topCorner];
+
+  return isOnCurve(x, y, roundedDiamondPoints, tolerance);
 }
 
 const isOverText = (x, y, figure) => {
@@ -286,6 +308,8 @@ export const isOnFigure = (x, y, figure) => {
       return isOnFlatArrow(x, y, figure)
     case 'rectangle':
       return isOnRectangle(x, y, figure)
+    case 'diamond':
+      return isOnDiamond(x, y, figure)
     case 'oval':
       return isOnOval(x, y, figure)
     case 'line':
@@ -326,6 +350,25 @@ const isOverRectangle = (x, y, figure) => {
   return false
 }
 
+const isOverDiamond = (x, y, figure) => {
+  const { points: [pointA, pointB] } = figure
+
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
+
+  const centerX = (startX + endX) / 2;
+  const centerY = (startY + endY) / 2;
+
+  const topCorner    = [centerX, Math.min(startY, endY)];
+  const rightCorner  = [Math.max(startX, endX), centerY];
+  const bottomCorner = [centerX, Math.max(startY, endY)];
+  const leftCorner   = [Math.min(startX, endX), centerY];
+
+  const diamondPoints = [topCorner, rightCorner, bottomCorner, leftCorner];
+
+  return isOnPolygon(x, y, diamondPoints);
+}
+
 const isOverOval = (x, y, figure) => {
   const { points } = figure
 
@@ -349,6 +392,8 @@ export const isOverFigure = (x, y, figure) => {
   switch (figure.type) {
     case 'rectangle':
       return isOverRectangle(x, y, figure)
+    case 'diamond':
+      return isOverDiamond(x, y, figure)
     case 'oval':
       return isOverOval(x, y, figure)
     case 'text':
@@ -510,6 +555,31 @@ const isSegmentTouchOval = (segmentPoints, figure) => {
   return isSegmentIntersectCurve(segmentPoints, ovalPoints)
 }
 
+const isSegmentTouchDiamond = (segmentPoints, figure) => {
+  const [eraseAtX, eraseAtY] = segmentPoints.at(-1);
+
+  if (isOnDiamond(eraseAtX, eraseAtY, figure)) {
+    return true
+  }
+
+  const { points: [pointA, pointB] } = figure
+
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
+
+  const centerX = (startX + endX) / 2;
+  const centerY = (startY + endY) / 2;
+
+  const topCorner    = [centerX, Math.min(startY, endY)];
+  const rightCorner  = [Math.max(startX, endX), centerY];
+  const bottomCorner = [centerX, Math.max(startY, endY)];
+  const leftCorner   = [Math.min(startX, endX), centerY];
+
+  const roundedDiamondPoints = [topCorner, rightCorner, bottomCorner, leftCorner, topCorner];
+
+  return isSegmentIntersectCurve(segmentPoints, roundedDiamondPoints)
+}
+
 export const areFiguresIntersecting = (eraserFigure, figure) => {
   switch (figure.type) {
     case 'pen':
@@ -522,6 +592,8 @@ export const areFiguresIntersecting = (eraserFigure, figure) => {
       return isSegmentTouchFlatArrow(eraserFigure.points, figure)
     case 'rectangle':
       return isSegmentTouchRectangle(eraserFigure.points, figure)
+    case 'diamond':
+      return isSegmentTouchDiamond(eraserFigure.points, figure)
     case 'oval':
       return isSegmentTouchOval(eraserFigure.points, figure)
     case 'line':
@@ -539,8 +611,9 @@ export const getDotNameOnFigure = (x, y, figure) => {
     case 'arrow':
     case 'flat_arrow':
       return isOnTwoDots(x, y, figure) // ['pointA', 'pointB', null]
-    case 'oval':
     case 'rectangle':
+    case 'diamond':
+    case 'oval':
       return isOnFourDots(x, y, figure) // ['pointA', 'pointB', 'pointC', 'pointD', null]
     case 'text':
       return isOnTextDots(x, y, figure) // ['pointA', 'pointB', 'pointC', 'pointD', null]
@@ -551,8 +624,9 @@ export const getDotNameOnFigure = (x, y, figure) => {
 
 export const getSideNameOnFigure = (x, y, figure) => {
   switch (figure.type) {
-    case 'oval':
     case 'rectangle':
+    case 'diamond':
+    case 'oval':
       return isOnFigureSide(x, y, figure) // ['TopSide', 'BottomSide', 'LeftSide', 'RightSide', null]
     case 'text':
       return isOnTextSide(x, y, figure) // ['TopSide', 'BottomSide', 'LeftSide', 'RightSide', null]
@@ -567,7 +641,7 @@ const getDotCoordinates = (figure, dotName) => {
     if (dotName === 'pointB') return figure.points[1];
   }
 
-  if (['rectangle', 'oval'].includes(figure.type)) {
+  if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
     const [pointA, pointB] = figure.points;
 
     if (dotName === 'pointA') return pointA;
@@ -618,7 +692,7 @@ export const getSidePointName = (figure, sideName) => {
     return null;
   }
 
-  if (['rectangle', 'oval'].includes(figure.type)) {
+  if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
     const [pointA, pointB] = figure.points;
 
     if (sideName === 'TopSide')    return pointA[1] <= pointB[1] ? 'pointA' : 'pointB';
@@ -675,7 +749,7 @@ export const getSideOffsetCoordinates = (figure, sideName, sidePointName, x, y) 
     }
   }
 
-  if (['rectangle', 'oval'].includes(figure.type)) {
+  if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
     const sidePoint = sidePointName === 'pointA' ? figure.points[0] : figure.points[1];
 
     if (['TopSide', 'BottomSide'].includes(sideName)) {
@@ -871,7 +945,7 @@ const resizeFigureByDot = (figure, activeFigureInfo, { x, y, isShiftPressed }) =
     return;
   }
 
-  if (['rectangle', 'oval'].includes(figure.type)) {
+  if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
     resizeShapeByDots(figure, activeFigureInfo, { x, y, isShiftPressed });
     return;
   }
@@ -985,7 +1059,7 @@ const resizeShapeBySide = (figure, activeFigureInfo, { x, y, isShiftPressed }) =
 };
 
 const resizeFigureBySide = (figure, activeFigureInfo, { x, y, isShiftPressed }) => {
-  if (['rectangle', 'oval'].includes(figure.type)) {
+  if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
     resizeShapeBySide(figure, activeFigureInfo, { x, y, isShiftPressed });
     return;
   }

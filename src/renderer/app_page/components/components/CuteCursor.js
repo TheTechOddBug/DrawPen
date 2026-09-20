@@ -88,6 +88,8 @@ const CuteCursor = ({
         return <Icons.FlatArrow {...iconProps} />
       case "rectangle":
         return <Icons.Rectangle {...iconProps} />;
+      case "diamond":
+        return <Icons.Diamond {...iconProps} />;
       case "oval":
         return <Icons.Oval {...iconProps} />;
       case "line":

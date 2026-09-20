@@ -40,6 +40,7 @@ import { MdOutlineClose } from "react-icons/md";
 import { FaFont } from "react-icons/fa6";
 import { LuSquareMousePointer } from "react-icons/lu";
 import FaMagicPaintBrush from "./components/icons/FaMagicPaintBrush.js";
+import FaRegDiamond from "./components/icons/FaRegDiamond.js";
 
 import {
   fadeOutDestroyAfterMs,
@@ -64,6 +65,7 @@ const Icons = {
   Arrow: FaArrowRight,
   FlatArrow: FaLongArrowAltRight,
   Rectangle: FaRegSquare,
+  Diamond: FaRegDiamond,
   Oval: FaRegCircle,
   Line: AiOutlineLine,
   Text: FaFont,
@@ -371,6 +373,10 @@ const Application = (settings) => {
       }
       case 'r': {
         handleChangeTool('rectangle');
+        break;
+      }
+      case 'd': {
+        handleChangeTool('diamond');
         break;
       }
       case 'o': {
@@ -913,7 +919,7 @@ const Application = (settings) => {
       return 'pointer';
     }
 
-    if (['rectangle', 'oval'].includes(figure.type)) {
+    if (['rectangle', 'diamond', 'oval'].includes(figure.type)) {
       const [pointA, pointB] = figure.points;
       const cornersByDotName = {
         pointA,
@@ -1251,7 +1257,7 @@ const Application = (settings) => {
             y = result.y;
           }
 
-          if (['rectangle', 'oval'].includes(currentFigure.type)) {
+          if (['rectangle', 'diamond', 'oval'].includes(currentFigure.type)) {
             const startPoint = currentFigure.points[0];
 
             const result = applyAspectRatioLock(startPoint[0], startPoint[1], x, y, currentFigure.ratio);
@@ -1347,7 +1353,7 @@ const Application = (settings) => {
         const currentFigure = allFigures.at(-1);
         const shapeDistance = distanceBetweenPoints(currentFigure.points[0], upPoint);
 
-        if (['rectangle', 'oval'].includes(currentFigure.type)) {
+        if (['rectangle', 'diamond', 'oval'].includes(currentFigure.type)) {
           currentFigure.ratio = calculateAspectRatio(currentFigure);
         }
 
@@ -1365,7 +1371,7 @@ const Application = (settings) => {
       const activeFigure = findActiveFigure()
 
       if (activeFigureInfo.resizing) {
-        if (['rectangle', 'oval'].includes(activeFigure.type)) {
+        if (['rectangle', 'diamond', 'oval'].includes(activeFigure.type)) {
           activeFigure.ratio = calculateAspectRatio(activeFigure);
 
           setAllFigures([...allFigures]);

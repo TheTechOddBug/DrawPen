@@ -403,29 +403,87 @@ const drawRectangleSkeleton = (ctx, pointA, pointB, color, width) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
 
+  const left   = Math.min(startX, endX);
+  const right  = Math.max(startX, endX);
+  const top    = Math.min(startY, endY);
+  const bottom = Math.max(startY, endY);
+
+  const length = right - left;
+  const height = bottom - top;
+  const radius = Math.min(Math.min(length, height) * 0.25, 32);
+
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
-  let length = Math.abs(endX - startX);
-  let height = Math.abs(endY - startY);
-  let x = Math.min(startX, endX);
-  let y = Math.min(startY, endY);
+  ctx.beginPath();
+  ctx.moveTo(left + radius, top);
 
-  let radius = 0;
-  if (length > 20 && height > 20) radius = 10; // TODO: Adjust to be smooth
+  ctx.lineTo(right - radius, top);
+  ctx.quadraticCurveTo(right, top, right, top + radius);
+
+  ctx.lineTo(right, bottom - radius);
+  ctx.quadraticCurveTo(right, bottom, right - radius, bottom);
+
+  ctx.lineTo(left + radius, bottom);
+  ctx.quadraticCurveTo(left, bottom, left, bottom - radius);
+
+  ctx.lineTo(left, top + radius);
+  ctx.quadraticCurveTo(left, top, left + radius, top);
+
+  ctx.closePath();
+  ctx.stroke();
+}
+
+export const drawDiamond = (ctx, figure, updateRainbowColorDeg, colorList) => {
+  const { points: [pointA, pointB] } = figure
+  const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
+
+  drawDiamondSkeleton(ctx, pointA, pointB, color, width)
+}
+
+export const drawDiamondActive = (ctx, figure, hoveredDot) => {
+  const [pointA, pointB] = figure.points
+
+  drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
+}
+
+const drawDiamondSkeleton = (ctx, pointA, pointB, color, width) => {
+  const [startX, startY] = pointA;
+  const [endX, endY] = pointB;
+
+  const centerX = (startX + endX) / 2;
+  const centerY = (startY + endY) / 2;
+
+  const topCorner    = [centerX, Math.min(startY, endY)];
+  const rightCorner  = [Math.max(startX, endX), centerY];
+  const bottomCorner = [centerX, Math.max(startY, endY)];
+  const leftCorner   = [Math.min(startX, endX), centerY];
+
+  const offsetX = (rightCorner[0] - leftCorner[0]) / 8;
+  const offsetY = (bottomCorner[1] - topCorner[1]) / 8;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
 
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + length - radius, y);
-  ctx.arc(x + length - radius, y + radius, radius, Math.PI * 1.5, Math.PI * 2);
-  ctx.lineTo(x + length, y + height - radius);
-  ctx.arc(x + length - radius, y + height - radius, radius, 0, Math.PI * 0.5);
-  ctx.lineTo(x + radius, y + height);
-  ctx.arc(x + radius, y + height - radius, radius, Math.PI * 0.5, Math.PI);
-  ctx.lineTo(x, y + radius);
-  ctx.arc(x + radius, y + radius, radius, Math.PI, Math.PI * 1.5);
+  ctx.moveTo(topCorner[0] + offsetX, topCorner[1] + offsetY);
+
+  ctx.lineTo(rightCorner[0] - offsetX, rightCorner[1] - offsetY);
+  ctx.bezierCurveTo(...rightCorner, ...rightCorner, rightCorner[0] - offsetX, rightCorner[1] + offsetY);
+
+  ctx.lineTo(bottomCorner[0] + offsetX, bottomCorner[1] - offsetY);
+  ctx.bezierCurveTo(...bottomCorner, ...bottomCorner, bottomCorner[0] - offsetX, bottomCorner[1] - offsetY);
+
+  ctx.lineTo(leftCorner[0] + offsetX, leftCorner[1] + offsetY);
+  ctx.bezierCurveTo(...leftCorner, ...leftCorner, leftCorner[0] + offsetX, leftCorner[1] - offsetY);
+
+  ctx.lineTo(topCorner[0] - offsetX, topCorner[1] + offsetY);
+  ctx.bezierCurveTo(...topCorner, ...topCorner, topCorner[0] + offsetX, topCorner[1] + offsetY);
+
   ctx.closePath();
   ctx.stroke();
 }
