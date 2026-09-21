@@ -284,7 +284,7 @@
         div {
           pointer-events: none;
           height: 15px;
-          background-color: #000;
+          background-color: var(--toolbar-border-color);
           transform: rotate(45deg);
         }
 

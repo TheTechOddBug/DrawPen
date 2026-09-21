@@ -23,7 +23,7 @@ const getFigureBounds = (figure) => {
     };
   }
 
-  const { points: [pointA, pointB] } = figure
+  const { points: [pointA, pointB] } = figure;
 
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
@@ -116,75 +116,82 @@ const FigureToolbar = ({
     setOpenMenu(null);
   };
 
-  const renderSubmenu = () => {
-    if (!openMenu) return null;
-
+  const renderColorSubmenu = () => {
     return (
-      <div id="figure-sub-toolbar">
-        {openMenu === 'color' && (
-          colorList.map((color, index) => (
-            <div key={color.id} className="figure-sub-item">
-              <button
-                tabIndex={-1}
-                className={`toolbar__color-picker ${color.isRainbow ? 'color-rainbow' : ''}`}
-                style={{ backgroundColor: color.color }}
-                title={color.title}
-                onClick={() => applyColor(index)}
-              />
-            </div>
-          ))
-        )}
+      <div className="figure-sub-toolbar">
+        {colorList.map((color, index) => (
+          <div key={color.id} className="figure-sub-item">
+            <button
+              tabIndex={-1}
+              className={`toolbar__color-picker ${color.isRainbow ? 'color-rainbow' : ''}`}
+              style={{ backgroundColor: color.color }}
+              title={color.title}
+              onClick={() => applyColor(index)}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
 
-        {openMenu === 'width' && (
-          widthList.map((width, index) => (
-            <div key={width.name} className="figure-sub-item">
-              <button
-                type="button"
-                tabIndex={-1}
-                className={`toolbar__width-picker ${width.name}`}
-                title={width.title}
-                onClick={() => applyWidth(index)}
-              >
-                <div />
-              </button>
-            </div>
-          ))
-        )}
+  const renderWidthSubmenu = () => {
+    return (
+      <div className="figure-sub-toolbar">
+        {widthList.map((width, index) => (
+          <div key={width.name} className="figure-sub-item">
+            <button
+              type="button"
+              tabIndex={-1}
+              className={`toolbar__width-picker ${width.name}`}
+              title={width.title}
+              onClick={() => applyWidth(index)}
+            >
+              <div />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
-        {openMenu === 'corners' && (
-          <>
-            <div className="figure-sub-item">
-              <button tabIndex={-1} title="Square corners">
-                <TbBorderCornerSquare />
-              </button>
-            </div>
-            <div className="figure-sub-item">
-              <button tabIndex={-1} title="Rounded corners">
-                <MdRoundedCorner />
-              </button>
-            </div>
-          </>
-        )}
+  const renderCornersSubmenu = () => {
+    return (
+      <div className="figure-sub-toolbar">
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Square corners">
+            <TbBorderCornerSquare />
+          </button>
+        </div>
 
-        {openMenu === 'stroke' && (
-          <>
-            <div className="figure-sub-item">
-              <button tabIndex={-1} title="Solid stroke">
-                <TbMinus />
-              </button>
-            </div>
-            <div className="figure-sub-item">
-              <button tabIndex={-1} title="Dashed stroke">
-                <TbLineDashed />
-              </button>
-            </div>
-            <div className="figure-sub-item">
-              <button tabIndex={-1} title="Dotted stroke">
-                <TbLineDotted />
-              </button>
-            </div>
-          </>
-        )}
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Rounded corners">
+            <MdRoundedCorner />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderStrokeSubmenu = () => {
+    return (
+      <div className="figure-sub-toolbar">
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Solid stroke">
+            <TbMinus />
+          </button>
+        </div>
+
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Dashed stroke">
+            <TbLineDashed />
+          </button>
+        </div>
+
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Dotted stroke">
+            <TbLineDotted />
+          </button>
+        </div>
       </div>
     );
   };
@@ -196,7 +203,7 @@ const FigureToolbar = ({
       className={position.placement === 'top' ? 'above-figure' : ''}
       style={{ left: position.left, top: position.top }}
     >
-      <div className="figure-sub-item">
+      <div className="figure-sub-item figure-sub-item--toolbar-centered">
         <button
           tabIndex={-1}
           className={`toolbar__color-picker ${colorList[figure.colorIndex].isRainbow ? 'color-rainbow' : ''}`}
@@ -204,6 +211,8 @@ const FigureToolbar = ({
           title="Color"
           onClick={() => toggleMenu('color')}
         />
+
+        {openMenu === 'color' && renderColorSubmenu()}
       </div>
 
       <div className="figure-sub-item">
@@ -215,29 +224,46 @@ const FigureToolbar = ({
         >
           <div />
         </button>
+
+        {openMenu === 'width' && renderWidthSubmenu()}
       </div>
 
       <div className="figure-sub-item">
-        <button tabIndex={-1} title="Corners" onClick={() => toggleMenu('corners')}>
+        <button
+          tabIndex={-1}
+          title="Corners"
+          onClick={() => toggleMenu('corners')}
+        >
           <MdRoundedCorner />
         </button>
+
+        {openMenu === 'corners' && renderCornersSubmenu()}
       </div>
 
       <div className="figure-sub-item">
-        <button tabIndex={-1} title="Stroke" onClick={() => toggleMenu('stroke')}>
+        <button
+          tabIndex={-1}
+          title="Stroke"
+          onClick={() => toggleMenu('stroke')}
+        >
           <TbMinus />
         </button>
+
+        {openMenu === 'stroke' && renderStrokeSubmenu()}
       </div>
 
       <div className="figure-sub-cross-line" />
 
       <div className="figure-sub-item">
-        <button tabIndex={-1} title="Delete" onClick={onDelete}>
+        <button
+          tabIndex={-1}
+          className="toolbar__delete-button"
+          title="Delete"
+          onClick={onDelete}
+        >
           <Icons.Trash />
         </button>
       </div>
-
-      {renderSubmenu()}
     </div>
   );
 };

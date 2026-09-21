@@ -1,5 +1,9 @@
 :root {
-  --figure-toolbar-height: 44px;
+  --figure-toolbar-height: 36px;
+  --figure-toolbar-overlap: 4px;
+
+  --figure-toolbar-gap: 3px;
+  --figure-toolbar-border-color: #020202; // --toolbar-border-color
 }
 
 // Reset button behavior
@@ -25,26 +29,38 @@
   display: flex;
   height: var(--figure-toolbar-height);
 
-  padding: 5px 7px;
+  padding: 0 6px;
   align-items: center;
-  gap: 3px;
+  gap: var(--figure-toolbar-gap);
+
   box-sizing: border-box;
-  border: 1px solid var(--toolbar-border-color);
-  border-radius: 10px;
+  border: 1px solid var(--figure-toolbar-border-color);
+  border-radius: 8px;
   background-color: var(--toolbar-background-color);
 
   .figure-sub-item {
+    position: relative;
+
     display: flex;
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
+
     align-items: center;
     justify-content: center;
     cursor: pointer;
 
     button {
       svg {
+        display: block;
         width: 20px;
         height: 20px;
+      }
+
+      &.toolbar__delete-button {
+        svg {
+          width: 16px;
+          height: 16px;
+        }
       }
     }
   }
@@ -52,27 +68,29 @@
   .toolbar__width-picker,
   .toolbar__color-picker {
     display: flex;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+
     align-items: center;
     justify-content: center;
+
     box-sizing: border-box;
-    border: 2px solid var(--toolbar-border-color);
-    border-radius: 5px;
+    border: 1px solid var(--figure-toolbar-border-color);
+    border-radius: 4px;
   }
 
   .toolbar__width-picker {
     div {
       pointer-events: none;
-      height: 15px;
-      background-color: #000;
+      height: 13px;
+      background-color: var(--figure-toolbar-border-color);
       transform: rotate(45deg);
     }
 
     &.thin { div { width: 2px; }}
-    &.light { div { width: 4px; }}
-    &.medium { div { width: 6px; }}
-    &.bold { div { width: 8px; }}
+    &.light { div { width: 3px; }}
+    &.medium { div { width: 5px; }}
+    &.bold { div { width: 6px; }}
   }
 
   .toolbar__color-picker {
@@ -84,32 +102,60 @@
   .figure-sub-cross-line {
     width: 1px;
     height: 20px;
-    margin: 0 4px;
-    background-color: var(--toolbar-border-color);
+    margin: 0 3px;
+
+    background-color: var(--figure-toolbar-border-color);
     cursor: default;
   }
 
-  #figure-sub-toolbar {
+  .figure-sub-toolbar {
     position: absolute;
     display: flex;
     height: var(--figure-toolbar-height);
 
+    left: 50%;
     transform: translateX(-50%);
 
-    top: 100%;
-    left: 50%;
-
-    padding: 5px 7px;
+    padding: 0 6px;
     align-items: center;
-    gap: 3px;
+    gap: var(--figure-toolbar-gap);
+
     box-sizing: border-box;
-    border: 1px solid var(--toolbar-border-color);
-    border-radius: 10px;
+    border: 1px solid var(--figure-toolbar-border-color);
+    border-radius: 8px;
     background-color: var(--toolbar-background-color);
   }
+}
 
-  &.above-figure #figure-sub-toolbar {
-    top: auto;
-    bottom: 100%;
+#figure-toolbar {
+  .figure-sub-item {
+    position: relative;
+
+    .figure-sub-toolbar {
+      top: 100%;
+    }
+
+    &.figure-sub-item--toolbar-centered {
+      position: static;
+
+      .figure-sub-toolbar {
+        top: calc(100% - var(--figure-toolbar-overlap));
+      }
+    }
+  }
+
+  &.above-figure {
+    .figure-sub-item {
+      .figure-sub-toolbar {
+        top: auto;
+        bottom: 100%;
+      }
+
+      &.figure-sub-item--toolbar-centered {
+        .figure-sub-toolbar {
+          bottom: calc(100% - var(--figure-toolbar-overlap));
+        }
+      }
+    }
   }
 }
