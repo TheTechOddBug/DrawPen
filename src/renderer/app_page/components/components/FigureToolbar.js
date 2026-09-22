@@ -1,7 +1,8 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import './FigureToolbar.scss';
 import { MdRoundedCorner } from 'react-icons/md';
-import { TbBorderCornerSquare, TbLineDashed, TbLineDotted, TbMinus } from 'react-icons/tb';
+import MdSquareCorner from './icons/MdSquareCorner.js';
+import { TbLineDashed, TbLineDotted, TbMinus } from 'react-icons/tb';
 import { toolbarViewportMargin, widthList } from '../constants.js';
 
 const clamp = (value, min, max) => {
@@ -54,8 +55,8 @@ const FigureToolbar = ({
     if (!toolbarElement) return;
 
     const figureGap = 16;
-    const toolbarHeight = 44;
-    const submenuHeight = 36;
+    const toolbarHeight = 36;
+    const submenuHeight = 32; // 36 - 4 (overlap)
 
     const toolbarWidth = toolbarElement.offsetWidth;
     const figureBounds = getFigureBounds(figure);
@@ -69,17 +70,36 @@ const FigureToolbar = ({
     const canFitBelow = topBelowFigure + toolbarHeight + submenuHeight <= bottomBoundary;
     const canFitAbove = topAboveFigure - submenuHeight >= topBoundary;
 
-    // Prefer below; also use it as the fallback when neither side fits.
-    const shouldPlaceBelow = canFitBelow || !canFitAbove;
-    const preferredTop = shouldPlaceBelow ? topBelowFigure : topAboveFigure;
+    let placement;
 
-    const minTop = shouldPlaceBelow
-      ? topBoundary
-      : topBoundary + submenuHeight;
+    if (canFitBelow) {
+      placement = 'bottom';
+    } else if (canFitAbove) {
+      placement = 'top';
+    } else {
+      placement = 'middle';
+    }
 
-    const maxTop = shouldPlaceBelow
-      ? bottomBoundary - toolbarHeight - submenuHeight
-      : bottomBoundary - toolbarHeight;
+    let preferredTop;
+    let minTop;
+    let maxTop;
+
+    if (placement === 'bottom') {
+      minTop = topBoundary;
+      maxTop = bottomBoundary - toolbarHeight - submenuHeight;
+
+      preferredTop = topBelowFigure;
+    } else if (placement === 'top') {
+      minTop = topBoundary + submenuHeight;
+      maxTop = bottomBoundary - toolbarHeight;
+
+      preferredTop = topAboveFigure;
+    } else {
+      preferredTop = figureBounds.bottom - figureGap - toolbarHeight;
+
+      minTop = topBoundary;
+      maxTop = bottomBoundary - toolbarHeight - submenuHeight;
+    }
 
     const clampedTop = clamp(preferredTop, minTop, maxTop);
 
@@ -94,7 +114,7 @@ const FigureToolbar = ({
     setPosition({
       top: clampedTop,
       left: clampedLeft,
-      placement: shouldPlaceBelow ? 'bottom' : 'top',
+      placement: placement,
     });
   }, [figure]);
 
@@ -124,7 +144,7 @@ const FigureToolbar = ({
             <button
               tabIndex={-1}
               className={`toolbar__color-picker ${color.isRainbow ? 'color-rainbow' : ''}`}
-              style={{ backgroundColor: color.color }}
+              style={{ '--picker-color': color.color }}
               title={color.title}
               onClick={() => applyColor(index)}
             />
@@ -159,7 +179,7 @@ const FigureToolbar = ({
       <div className="figure-sub-toolbar">
         <div className="figure-sub-item">
           <button tabIndex={-1} title="Square corners">
-            <TbBorderCornerSquare />
+            <MdSquareCorner />
           </button>
         </div>
 
@@ -200,14 +220,17 @@ const FigureToolbar = ({
     <div
       id="figure-toolbar"
       ref={toolbarRef}
-      className={position.placement === 'top' ? 'above-figure' : ''}
+        className={[
+          position.placement === 'top' && 'above-figure',
+          openMenu && 'submenu-open',
+        ].filter(Boolean).join(' ')}
       style={{ left: position.left, top: position.top }}
     >
-      <div className="figure-sub-item figure-sub-item--toolbar-centered">
+      <div className={`figure-sub-item figure-sub-item--toolbar-centered ${openMenu === 'color' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
           className={`toolbar__color-picker ${colorList[figure.colorIndex].isRainbow ? 'color-rainbow' : ''}`}
-          style={{ backgroundColor: colorList[figure.colorIndex].color }}
+          style={{ '--picker-color': colorList[figure.colorIndex].color }}
           title="Color"
           onClick={() => toggleMenu('color')}
         />
@@ -215,7 +238,7 @@ const FigureToolbar = ({
         {openMenu === 'color' && renderColorSubmenu()}
       </div>
 
-      <div className="figure-sub-item">
+      <div className={`figure-sub-item ${openMenu === 'width' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
           className={`toolbar__width-picker ${widthList[figure.widthIndex].name}`}
@@ -228,7 +251,7 @@ const FigureToolbar = ({
         {openMenu === 'width' && renderWidthSubmenu()}
       </div>
 
-      <div className="figure-sub-item">
+      <div className={`figure-sub-item ${openMenu === 'corners' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
           title="Corners"
@@ -240,7 +263,7 @@ const FigureToolbar = ({
         {openMenu === 'corners' && renderCornersSubmenu()}
       </div>
 
-      <div className="figure-sub-item">
+      <div className={`figure-sub-item ${openMenu === 'stroke' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
           title="Stroke"
