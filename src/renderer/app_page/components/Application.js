@@ -864,6 +864,16 @@ const Application = (settings) => {
     setAllFigures([...allFigures]);
   };
 
+  const handleChangeFigureEdges = (newEdgeIndex) => {
+    if (!activeFigureInfo) return;
+
+    const activeFigure = findActiveFigure()
+
+    activeFigure.edgeIndex = newEdgeIndex
+
+    setAllFigures([...allFigures]);
+  };
+
   const handleDeleteActiveFigure = () => {
     if (!activeFigureInfo) return;
 
@@ -1738,6 +1748,7 @@ const Application = (settings) => {
             onChangeColor={handleChangeFigureColor}
             onChangeWidth={handleChangeFigureWidth}
             onChangeStroke={handleChangeFigureStroke}
+            onChangeEdges={handleChangeFigureEdges}
             onDelete={handleDeleteActiveFigure}
             Icons={Icons}
           />

@@ -410,8 +410,9 @@ export const drawRectangle = (ctx, figure, updateRainbowColorDeg, colorList) => 
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
   const stroke = figure.strokeIndex
+  const edge = figure.edgeIndex
 
-  drawRectangleSkeleton(ctx, pointA, pointB, color, width, stroke)
+  drawRectangleSkeleton(ctx, pointA, pointB, color, width, stroke, edge)
 }
 
 export const drawRectangleActive = (ctx, figure, hoveredDot) => {
@@ -420,7 +421,7 @@ export const drawRectangleActive = (ctx, figure, hoveredDot) => {
   drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawRectangleSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
+const drawRectangleSkeleton = (ctx, pointA, pointB, color, width, stroke, edge) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
   const lineDashPattern = strokeSettings(stroke, width);
@@ -432,7 +433,6 @@ const drawRectangleSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
 
   const length = right - left;
   const height = bottom - top;
-  const radius = Math.min(Math.min(length, height) * 0.25, 32);
 
   ctx.save();
   ctx.strokeStyle = color;
@@ -442,19 +442,30 @@ const drawRectangleSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
-  ctx.moveTo(left + radius, top);
 
-  ctx.lineTo(right - radius, top);
-  ctx.quadraticCurveTo(right, top, right, top + radius);
+  if (edge === 0) {
+    ctx.moveTo(left, top);
 
-  ctx.lineTo(right, bottom - radius);
-  ctx.quadraticCurveTo(right, bottom, right - radius, bottom);
+    ctx.lineTo(right, top);
+    ctx.lineTo(right, bottom);
+    ctx.lineTo(left, bottom);
+  } else {
+    const radius = Math.min(Math.min(length, height) * 0.25, 32);
 
-  ctx.lineTo(left + radius, bottom);
-  ctx.quadraticCurveTo(left, bottom, left, bottom - radius);
+    ctx.moveTo(left + radius, top);
 
-  ctx.lineTo(left, top + radius);
-  ctx.quadraticCurveTo(left, top, left + radius, top);
+    ctx.lineTo(right - radius, top);
+    ctx.quadraticCurveTo(right, top, right, top + radius);
+
+    ctx.lineTo(right, bottom - radius);
+    ctx.quadraticCurveTo(right, bottom, right - radius, bottom);
+
+    ctx.lineTo(left + radius, bottom);
+    ctx.quadraticCurveTo(left, bottom, left, bottom - radius);
+
+    ctx.lineTo(left, top + radius);
+    ctx.quadraticCurveTo(left, top, left + radius, top);
+  }
 
   ctx.closePath();
   ctx.stroke();
@@ -465,8 +476,9 @@ export const drawDiamond = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
   const stroke = figure.strokeIndex
+  const edge = figure.edgeIndex
 
-  drawDiamondSkeleton(ctx, pointA, pointB, color, width, stroke)
+  drawDiamondSkeleton(ctx, pointA, pointB, color, width, stroke, edge)
 }
 
 export const drawDiamondActive = (ctx, figure, hoveredDot) => {
@@ -475,7 +487,7 @@ export const drawDiamondActive = (ctx, figure, hoveredDot) => {
   drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawDiamondSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
+const drawDiamondSkeleton = (ctx, pointA, pointB, color, width, stroke, edge) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
   const lineDashPattern = strokeSettings(stroke, width);
@@ -499,19 +511,28 @@ const drawDiamondSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
-  ctx.moveTo(topCorner[0] + offsetX, topCorner[1] + offsetY);
 
-  ctx.lineTo(rightCorner[0] - offsetX, rightCorner[1] - offsetY);
-  ctx.bezierCurveTo(...rightCorner, ...rightCorner, rightCorner[0] - offsetX, rightCorner[1] + offsetY);
+  if (edge === 0) {
+    ctx.moveTo(...topCorner);
 
-  ctx.lineTo(bottomCorner[0] + offsetX, bottomCorner[1] - offsetY);
-  ctx.bezierCurveTo(...bottomCorner, ...bottomCorner, bottomCorner[0] - offsetX, bottomCorner[1] - offsetY);
+    ctx.lineTo(...rightCorner);
+    ctx.lineTo(...bottomCorner);
+    ctx.lineTo(...leftCorner);
+  } else {
+    ctx.moveTo(topCorner[0] + offsetX, topCorner[1] + offsetY);
 
-  ctx.lineTo(leftCorner[0] + offsetX, leftCorner[1] + offsetY);
-  ctx.bezierCurveTo(...leftCorner, ...leftCorner, leftCorner[0] + offsetX, leftCorner[1] - offsetY);
+    ctx.lineTo(rightCorner[0] - offsetX, rightCorner[1] - offsetY);
+    ctx.bezierCurveTo(...rightCorner, ...rightCorner, rightCorner[0] - offsetX, rightCorner[1] + offsetY);
 
-  ctx.lineTo(topCorner[0] - offsetX, topCorner[1] + offsetY);
-  ctx.bezierCurveTo(...topCorner, ...topCorner, topCorner[0] + offsetX, topCorner[1] + offsetY);
+    ctx.lineTo(bottomCorner[0] + offsetX, bottomCorner[1] - offsetY);
+    ctx.bezierCurveTo(...bottomCorner, ...bottomCorner, bottomCorner[0] - offsetX, bottomCorner[1] - offsetY);
+
+    ctx.lineTo(leftCorner[0] + offsetX, leftCorner[1] + offsetY);
+    ctx.bezierCurveTo(...leftCorner, ...leftCorner, leftCorner[0] + offsetX, leftCorner[1] - offsetY);
+
+    ctx.lineTo(topCorner[0] - offsetX, topCorner[1] + offsetY);
+    ctx.bezierCurveTo(...topCorner, ...topCorner, topCorner[0] + offsetX, topCorner[1] + offsetY);
+  }
 
   ctx.closePath();
   ctx.stroke();

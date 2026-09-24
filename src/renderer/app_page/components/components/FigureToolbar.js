@@ -1,17 +1,12 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import './FigureToolbar.scss';
 import { MdRoundedCorner } from 'react-icons/md';
-import MdSquareCorner from './icons/MdSquareCorner.js';
+import MdSharpCorner from './icons/MdSharpCorner.js';
 import { TbLineDashed, TbLineDotted, TbMinus } from 'react-icons/tb';
 import { toolbarViewportMargin, widthList } from '../constants.js';
 
 const strokeStyleFigureTypes = ['flat_arrow', 'rectangle', 'diamond', 'oval', 'line'];
-
-const strokeStyleOptions = [
-  { name: 'solid',  title: 'Solid',  icon: <TbMinus /> },
-  { name: 'dashed', title: 'Dashed', icon: <TbLineDashed /> },
-  { name: 'dotted', title: 'Dotted', icon: <TbLineDotted /> },
-];
+const edgeStyleFigureTypes = ['rectangle', 'diamond'];
 
 const clamp = (value, min, max) => {
   return Math.min(
@@ -51,13 +46,18 @@ const FigureToolbar = ({
   onChangeColor,
   onChangeWidth,
   onChangeStroke,
+  onChangeEdges,
   onDelete,
   Icons,
 }) => {
   const figureType        = figure.type;
   const figureColorIndex  = figure.colorIndex;
   const figureWidthIndex  = figure.widthIndex;
+  const figureEdgeIndex   = figure.edgeIndex ?? 1;
   const figureStrokeIndex = figure.strokeIndex ?? 0;
+
+  const figureHasEdgeStyle   = edgeStyleFigureTypes.includes(figureType);
+  const figureHasStrokeStyle = strokeStyleFigureTypes.includes(figureType);
 
   const [openMenu, setOpenMenu] = useState(null);
   const [position, setPosition] = useState({ left: 0, top: 0, placement: 'bottom' });
@@ -155,6 +155,11 @@ const FigureToolbar = ({
     setOpenMenu(null);
   };
 
+  const applyEdges = (edgeIndex) => {
+    onChangeEdges(edgeIndex);
+    setOpenMenu(null);
+  };
+
   const renderColorSubmenu = () => {
     return (
       <div className="figure-sub-toolbar">
@@ -192,17 +197,17 @@ const FigureToolbar = ({
     );
   };
 
-  const renderCornersSubmenu = () => {
+  const renderEdgesSubmenu = () => {
     return (
       <div className="figure-sub-toolbar">
         <div className="figure-sub-item">
-          <button tabIndex={-1} title="Square corners">
-            <MdSquareCorner />
+          <button tabIndex={-1} title="Sharp" onClick={() => applyEdges(0)}>
+            <MdSharpCorner />
           </button>
         </div>
 
         <div className="figure-sub-item">
-          <button tabIndex={-1} title="Rounded corners">
+          <button tabIndex={-1} title="Round" onClick={() => applyEdges(1)}>
             <MdRoundedCorner />
           </button>
         </div>
@@ -213,17 +218,23 @@ const FigureToolbar = ({
   const renderStrokeSubmenu = () => {
     return (
       <div className="figure-sub-toolbar">
-        {strokeStyleOptions.map((stroke, index) => (
-          <div key={stroke.name} className="figure-sub-item">
-            <button
-              tabIndex={-1}
-              title={stroke.title}
-              onClick={() => applyStroke(index)}
-            >
-              {stroke.icon}
-            </button>
-          </div>
-        ))}
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Solid" onClick={() => applyStroke(0)}>
+            <TbMinus />
+          </button>
+        </div>
+
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Dashed" onClick={() => applyStroke(1)}>
+            <TbLineDashed />
+          </button>
+        </div>
+
+        <div className="figure-sub-item">
+          <button tabIndex={-1} title="Dotted" onClick={() => applyStroke(2)}>
+            <TbLineDotted />
+          </button>
+        </div>
       </div>
     );
   };
@@ -263,31 +274,40 @@ const FigureToolbar = ({
         {openMenu === 'width' && renderWidthSubmenu()}
       </div>
 
-      <div className={`figure-sub-item ${openMenu === 'corners' ? 'active' : ''}`}>
-        <button
-          tabIndex={-1}
-          title="Corners"
-          onClick={() => toggleMenu('corners')}
-        >
-          <MdRoundedCorner />
-        </button>
+      {
+        figureHasEdgeStyle && (
+          <div className={`figure-sub-item ${openMenu === 'edges' ? 'active' : ''}`}>
+            <button
+              tabIndex={-1}
+              title="Edges"
+              onClick={() => toggleMenu('edges')}
+            >
+              {figureEdgeIndex === 0 && <MdSharpCorner />}
+              {figureEdgeIndex === 1 && <MdRoundedCorner />}
+            </button>
 
-        {openMenu === 'corners' && renderCornersSubmenu()}
-      </div>
+            {openMenu === 'edges' && renderEdgesSubmenu()}
+          </div>
+        )
+      }
 
-      {strokeStyleFigureTypes.includes(figureType) && (
-        <div className={`figure-sub-item ${openMenu === 'stroke' ? 'active' : ''}`}>
-          <button
-            tabIndex={-1}
-            title="Stroke"
-            onClick={() => toggleMenu('stroke')}
-          >
-            {strokeStyleOptions[figureStrokeIndex].icon}
-          </button>
+      {
+        figureHasStrokeStyle && (
+          <div className={`figure-sub-item ${openMenu === 'stroke' ? 'active' : ''}`}>
+            <button
+              tabIndex={-1}
+              title="Stroke"
+              onClick={() => toggleMenu('stroke')}
+            >
+              {figureStrokeIndex === 0 && <TbMinus />}
+              {figureStrokeIndex === 1 && <TbLineDashed />}
+              {figureStrokeIndex === 2 && <TbLineDotted />}
+            </button>
 
-          {openMenu === 'stroke' && renderStrokeSubmenu()}
-        </div>
-      )}
+            {openMenu === 'stroke' && renderStrokeSubmenu()}
+          </div>
+        )
+      }
 
       <div className="figure-sub-cross-line" />
 

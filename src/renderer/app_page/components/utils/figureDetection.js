@@ -78,8 +78,8 @@ const sampleCubicCurve = (startPoint, firstControlPoint, secondControlPoint, end
   return points;
 }
 
-const getRoundedRectanglePoints = (figure) => {
-  const { points: [pointA, pointB] } = figure
+const getRectanglePoints = (figure) => {
+  const { points: [pointA, pointB], edgeIndex } = figure
 
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
@@ -89,24 +89,34 @@ const getRoundedRectanglePoints = (figure) => {
   const top    = Math.min(startY, endY);
   const bottom = Math.max(startY, endY);
 
-  const radius = Math.min(Math.min(right - left, bottom - top) * 0.25, 32);
-
   const topLeftCorner     = [left, top];
   const topRightCorner    = [right, top];
   const bottomRightCorner = [right, bottom];
   const bottomLeftCorner  = [left, bottom];
 
-  const topLeftCornerStart     = [left, top + radius];
+  if (edgeIndex === 0) {
+    return [
+      topLeftCorner,
+      topRightCorner,
+      bottomRightCorner,
+      bottomLeftCorner,
+      topLeftCorner,
+    ];
+  }
+
+  const radius = Math.min(Math.min(right - left, bottom - top) * 0.25, 32);
+
+  const topLeftCornerStart     = [left,          top + radius];
   const topLeftCornerEnd       = [left + radius, top];
 
   const topRightCornerStart    = [right - radius, top];
-  const topRightCornerEnd      = [right, top + radius];
+  const topRightCornerEnd      = [right,          top + radius];
 
-  const bottomRightCornerStart = [right, bottom - radius];
+  const bottomRightCornerStart = [right,          bottom - radius];
   const bottomRightCornerEnd   = [right - radius, bottom];
 
   const bottomLeftCornerStart  = [left + radius, bottom];
-  const bottomLeftCornerEnd    = [left, bottom - radius];
+  const bottomLeftCornerEnd    = [left,          bottom - radius];
 
   return [
     topLeftCornerEnd,
@@ -121,8 +131,8 @@ const getRoundedRectanglePoints = (figure) => {
   ];
 }
 
-const getRoundedDiamondPoints = (figure) => {
-  const { points: [pointA, pointB] } = figure
+const getDiamondPoints = (figure) => {
+  const { points: [pointA, pointB], edgeIndex } = figure
 
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
@@ -134,6 +144,16 @@ const getRoundedDiamondPoints = (figure) => {
   const rightCorner  = [Math.max(startX, endX), centerY];
   const bottomCorner = [centerX, Math.max(startY, endY)];
   const leftCorner   = [Math.min(startX, endX), centerY];
+
+  if (edgeIndex === 0) {
+    return [
+      topCorner,
+      rightCorner,
+      bottomCorner,
+      leftCorner,
+      topCorner
+    ];
+  }
 
   const offsetX = (rightCorner[0] - leftCorner[0]) / 8;
   const offsetY = (bottomCorner[1] - topCorner[1]) / 8;
@@ -264,18 +284,18 @@ const isOnRectangle = (x, y, figure) => {
   const baseTolerance = 5;
   const tolerance = baseTolerance + widthList[widthIndex].figure_size / 2
 
-  const roundedRectanglePoints = getRoundedRectanglePoints(figure);
+  const rectanglePoints = getRectanglePoints(figure);
 
-  return isOnCurve(x, y, roundedRectanglePoints, tolerance);
+  return isOnCurve(x, y, rectanglePoints, tolerance);
 }
 
 const isOnDiamond = (x, y, figure) => {
   const baseTolerance = 5;
   const tolerance = baseTolerance + widthList[figure.widthIndex].figure_size / 2;
 
-  const roundedDiamondPoints = getRoundedDiamondPoints(figure);
+  const diamondPoints = getDiamondPoints(figure);
 
-  return isOnCurve(x, y, roundedDiamondPoints, tolerance);
+  return isOnCurve(x, y, diamondPoints, tolerance);
 }
 
 const isOverText = (x, y, figure) => {
@@ -419,15 +439,15 @@ export const isOnTextAutoResizeHandle = (x, y, figure) => {
 }
 
 const isOverRectangle = (x, y, figure) => {
-  const roundedRectanglePoints = getRoundedRectanglePoints(figure);
+  const rectanglePoints = getRectanglePoints(figure);
 
-  return isOnPolygon(x, y, roundedRectanglePoints);
+  return isOnPolygon(x, y, rectanglePoints);
 }
 
 const isOverDiamond = (x, y, figure) => {
-  const roundedDiamondPoints = getRoundedDiamondPoints(figure);
+  const diamondPoints = getDiamondPoints(figure);
 
-  return isOnPolygon(x, y, roundedDiamondPoints);
+  return isOnPolygon(x, y, diamondPoints);
 }
 
 const isOverOval = (x, y, figure) => {
@@ -549,9 +569,9 @@ const isSegmentTouchRectangle = (segmentPoints, figure) => {
     return true
   }
 
-  const roundedRectanglePoints = getRoundedRectanglePoints(figure);
+  const rectanglePoints = getRectanglePoints(figure);
 
-  return isSegmentIntersectCurve(segmentPoints, roundedRectanglePoints)
+  return isSegmentIntersectCurve(segmentPoints, rectanglePoints)
 }
 
 const isSegmentTouchText = (segmentPoints, figure) => {
@@ -613,9 +633,9 @@ const isSegmentTouchDiamond = (segmentPoints, figure) => {
     return true
   }
 
-  const roundedDiamondPoints = getRoundedDiamondPoints(figure);
+  const diamondPoints = getDiamondPoints(figure);
 
-  return isSegmentIntersectCurve(segmentPoints, roundedDiamondPoints)
+  return isSegmentIntersectCurve(segmentPoints, diamondPoints)
 }
 
 export const areFiguresIntersecting = (eraserFigure, figure) => {
