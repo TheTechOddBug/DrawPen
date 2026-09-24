@@ -30,6 +30,14 @@ const hslColor = (degree) => {
   return `hsl(${degree % 360}, 70%, 60%)`
 }
 
+const strokeSettings = (stroke, width) => {
+  // [довжина штриха, довжина проміжку]
+  if (stroke === 1) return [width * 3, width * 2];
+  if (stroke === 2) return [0,         width * 2];
+
+  return [];
+};
+
 function fadeAlpha(opacity) {
   return Math.round(opacity * 255).toString(16).padStart(2, '0');
 }
@@ -316,9 +324,10 @@ export const drawArrowActive = (ctx, figure, hoveredDot) => {
 export const drawFlatArrow = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
   const segments = calcSegmentsFlatArrow(figure.points, figure.widthIndex)
+  const stroke = figure.strokeIndex
 
   segments.forEach(([pointA, pointB]) => {
-    drawLineSkeleton(ctx, pointA, pointB, color, width)
+    drawLineSkeleton(ctx, pointA, pointB, color, width, stroke)
   })
 }
 
@@ -331,8 +340,9 @@ export const drawFlatArrowActive = (ctx, figure, hoveredDot) => {
 export const drawLine = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
+  const stroke = figure.strokeIndex
 
-  drawLineSkeleton(ctx, pointA, pointB, color, width)
+  drawLineSkeleton(ctx, pointA, pointB, color, width, stroke)
 }
 
 export const drawLineActive = (ctx, figure, hoveredDot) => {
@@ -341,25 +351,30 @@ export const drawLineActive = (ctx, figure, hoveredDot) => {
   drawTwoDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawLineSkeleton = (ctx, pointA, pointB, color, width) => {
+const drawLineSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
+  const lineDashPattern = strokeSettings(stroke, width);
 
+  ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineCap = 'round';
+  ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
   ctx.moveTo(startX, startY);
   ctx.lineTo(endX, endY);
   ctx.stroke();
+  ctx.restore();
 };
 
 export const drawOval = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
+  const stroke = figure.strokeIndex
 
-  drawOvalSkeleton(ctx, pointA, pointB, color, width)
+  drawOvalSkeleton(ctx, pointA, pointB, color, width, stroke)
 }
 
 export const drawOvalActive = (ctx, figure, hoveredDot) => {
@@ -368,29 +383,35 @@ export const drawOvalActive = (ctx, figure, hoveredDot) => {
   drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawOvalSkeleton = (ctx, pointA, pointB, color, width) => {
+const drawOvalSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
+  const lineDashPattern = strokeSettings(stroke, width);
 
+  const radiusX = Math.abs(endX - startX) / 2;
+  const radiusY = Math.abs(endY - startY) / 2;
+  const centerX = Math.min(startX, endX) + radiusX;
+  const centerY = Math.min(startY, endY) + radiusY;
+
+  ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineJoin = 'round';
-
-  let radiusX = Math.abs(endX - startX) / 2;
-  let radiusY = Math.abs(endY - startY) / 2;
-  let centerX = Math.min(startX, endX) + radiusX;
-  let centerY = Math.min(startY, endY) + radiusY;
+  ctx.lineCap = 'round';
+  ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
   ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
 }
 
 export const drawRectangle = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
+  const stroke = figure.strokeIndex
 
-  drawRectangleSkeleton(ctx, pointA, pointB, color, width)
+  drawRectangleSkeleton(ctx, pointA, pointB, color, width, stroke)
 }
 
 export const drawRectangleActive = (ctx, figure, hoveredDot) => {
@@ -399,9 +420,10 @@ export const drawRectangleActive = (ctx, figure, hoveredDot) => {
   drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawRectangleSkeleton = (ctx, pointA, pointB, color, width) => {
+const drawRectangleSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
+  const lineDashPattern = strokeSettings(stroke, width);
 
   const left   = Math.min(startX, endX);
   const right  = Math.max(startX, endX);
@@ -412,10 +434,12 @@ const drawRectangleSkeleton = (ctx, pointA, pointB, color, width) => {
   const height = bottom - top;
   const radius = Math.min(Math.min(length, height) * 0.25, 32);
 
+  ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
   ctx.moveTo(left + radius, top);
@@ -434,13 +458,15 @@ const drawRectangleSkeleton = (ctx, pointA, pointB, color, width) => {
 
   ctx.closePath();
   ctx.stroke();
+  ctx.restore();
 }
 
 export const drawDiamond = (ctx, figure, updateRainbowColorDeg, colorList) => {
   const { points: [pointA, pointB] } = figure
   const [color, width] = detectColorAndWidth(ctx, figure, updateRainbowColorDeg, colorList)
+  const stroke = figure.strokeIndex
 
-  drawDiamondSkeleton(ctx, pointA, pointB, color, width)
+  drawDiamondSkeleton(ctx, pointA, pointB, color, width, stroke)
 }
 
 export const drawDiamondActive = (ctx, figure, hoveredDot) => {
@@ -449,9 +475,10 @@ export const drawDiamondActive = (ctx, figure, hoveredDot) => {
   drawSelectionBoxWithDots(ctx, pointA, pointB, hoveredDot)
 }
 
-const drawDiamondSkeleton = (ctx, pointA, pointB, color, width) => {
+const drawDiamondSkeleton = (ctx, pointA, pointB, color, width, stroke) => {
   const [startX, startY] = pointA;
   const [endX, endY] = pointB;
+  const lineDashPattern = strokeSettings(stroke, width);
 
   const centerX = (startX + endX) / 2;
   const centerY = (startY + endY) / 2;
@@ -464,10 +491,12 @@ const drawDiamondSkeleton = (ctx, pointA, pointB, color, width) => {
   const offsetX = (rightCorner[0] - leftCorner[0]) / 8;
   const offsetY = (bottomCorner[1] - topCorner[1]) / 8;
 
+  ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.setLineDash(lineDashPattern);
 
   ctx.beginPath();
   ctx.moveTo(topCorner[0] + offsetX, topCorner[1] + offsetY);
@@ -486,6 +515,7 @@ const drawDiamondSkeleton = (ctx, pointA, pointB, color, width) => {
 
   ctx.closePath();
   ctx.stroke();
+  ctx.restore();
 }
 
 export const drawLaser = (ctx, figure) => {

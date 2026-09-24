@@ -119,7 +119,7 @@ const Application = (settings) => {
     initialFigures = [
       { id: Date.now() + 0, type: 'arrow',     colorIndex: 0, widthIndex: 2, points: [[100, 100], [400, 100]], rainbowColorDeg: (Math.random() * 360) },
       { id: Date.now() + 1, type: 'line',      colorIndex: 0, widthIndex: 2, points: [[100, 200], [400, 200]], rainbowColorDeg: 250 },
-      { id: Date.now() + 2, type: 'rectangle', colorIndex: 0, widthIndex: 2, points: [[70, 150], [450, 250]],  rainbowColorDeg: (Math.random() * 360), ratio: 1 },
+      { id: Date.now() + 2, type: 'rectangle', colorIndex: 0, widthIndex: 2, points: [[70, 150], [450, 250]],  rainbowColorDeg: (Math.random() * 360), ratio: 1, strokeIndex: 1 },
       { id: Date.now() + 3, type: 'oval',      colorIndex: 0, widthIndex: 3, points: [[100, 300], [400, 450]], rainbowColorDeg: (Math.random() * 360), ratio: 1 },
       { id: Date.now() + 4, type: 'text',      colorIndex: 2, widthIndex: 2, points: [[152, 118]],             rainbowColorDeg: (Math.random() * 360), text: 'Hello World', width: 400, height: 150, scale: 1 },
     ]
@@ -850,6 +850,16 @@ const Application = (settings) => {
       activeFigure.scale = 1;
       activeFigure.autoResize = true;
     }
+
+    setAllFigures([...allFigures]);
+  };
+
+  const handleChangeFigureStroke = (newStrokeIndex) => {
+    if (!activeFigureInfo) return;
+
+    const activeFigure = findActiveFigure()
+
+    activeFigure.strokeIndex = newStrokeIndex
 
     setAllFigures([...allFigures]);
   };
@@ -1727,6 +1737,7 @@ const Application = (settings) => {
             colorList={colorList}
             onChangeColor={handleChangeFigureColor}
             onChangeWidth={handleChangeFigureWidth}
+            onChangeStroke={handleChangeFigureStroke}
             onDelete={handleDeleteActiveFigure}
             Icons={Icons}
           />

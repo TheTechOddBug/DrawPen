@@ -5,6 +5,14 @@ import MdSquareCorner from './icons/MdSquareCorner.js';
 import { TbLineDashed, TbLineDotted, TbMinus } from 'react-icons/tb';
 import { toolbarViewportMargin, widthList } from '../constants.js';
 
+const strokeStyleFigureTypes = ['flat_arrow', 'rectangle', 'diamond', 'oval', 'line'];
+
+const strokeStyleOptions = [
+  { name: 'solid',  title: 'Solid',  icon: <TbMinus /> },
+  { name: 'dashed', title: 'Dashed', icon: <TbLineDashed /> },
+  { name: 'dotted', title: 'Dotted', icon: <TbLineDotted /> },
+];
+
 const clamp = (value, min, max) => {
   return Math.min(
     Math.max(value, min),
@@ -42,9 +50,15 @@ const FigureToolbar = ({
   colorList,
   onChangeColor,
   onChangeWidth,
+  onChangeStroke,
   onDelete,
   Icons,
 }) => {
+  const figureType        = figure.type;
+  const figureColorIndex  = figure.colorIndex;
+  const figureWidthIndex  = figure.widthIndex;
+  const figureStrokeIndex = figure.strokeIndex ?? 0;
+
   const [openMenu, setOpenMenu] = useState(null);
   const [position, setPosition] = useState({ left: 0, top: 0, placement: 'bottom' });
 
@@ -136,6 +150,11 @@ const FigureToolbar = ({
     setOpenMenu(null);
   };
 
+  const applyStroke = (strokeIndex) => {
+    onChangeStroke(strokeIndex);
+    setOpenMenu(null);
+  };
+
   const renderColorSubmenu = () => {
     return (
       <div className="figure-sub-toolbar">
@@ -160,7 +179,6 @@ const FigureToolbar = ({
         {widthList.map((width, index) => (
           <div key={width.name} className="figure-sub-item">
             <button
-              type="button"
               tabIndex={-1}
               className={`toolbar__width-picker ${width.name}`}
               title={width.title}
@@ -195,23 +213,17 @@ const FigureToolbar = ({
   const renderStrokeSubmenu = () => {
     return (
       <div className="figure-sub-toolbar">
-        <div className="figure-sub-item">
-          <button tabIndex={-1} title="Solid stroke">
-            <TbMinus />
-          </button>
-        </div>
-
-        <div className="figure-sub-item">
-          <button tabIndex={-1} title="Dashed stroke">
-            <TbLineDashed />
-          </button>
-        </div>
-
-        <div className="figure-sub-item">
-          <button tabIndex={-1} title="Dotted stroke">
-            <TbLineDotted />
-          </button>
-        </div>
+        {strokeStyleOptions.map((stroke, index) => (
+          <div key={stroke.name} className="figure-sub-item">
+            <button
+              tabIndex={-1}
+              title={stroke.title}
+              onClick={() => applyStroke(index)}
+            >
+              {stroke.icon}
+            </button>
+          </div>
+        ))}
       </div>
     );
   };
@@ -229,8 +241,8 @@ const FigureToolbar = ({
       <div className={`figure-sub-item figure-sub-item--toolbar-centered ${openMenu === 'color' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
-          className={`toolbar__color-picker ${colorList[figure.colorIndex].isRainbow ? 'color-rainbow' : ''}`}
-          style={{ '--picker-color': colorList[figure.colorIndex].color }}
+          className={`toolbar__color-picker ${colorList[figureColorIndex].isRainbow ? 'color-rainbow' : ''}`}
+          style={{ '--picker-color': colorList[figureColorIndex].color }}
           title="Color"
           onClick={() => toggleMenu('color')}
         />
@@ -241,8 +253,8 @@ const FigureToolbar = ({
       <div className={`figure-sub-item ${openMenu === 'width' ? 'active' : ''}`}>
         <button
           tabIndex={-1}
-          className={`toolbar__width-picker ${widthList[figure.widthIndex].name}`}
-          title={figure.type === 'text' ? 'Text size' : 'Line width'}
+          className={`toolbar__width-picker ${widthList[figureWidthIndex].name}`}
+          title={figureType === 'text' ? 'Text size' : 'Line width'}
           onClick={() => toggleMenu('width')}
         >
           <div />
@@ -263,17 +275,19 @@ const FigureToolbar = ({
         {openMenu === 'corners' && renderCornersSubmenu()}
       </div>
 
-      <div className={`figure-sub-item ${openMenu === 'stroke' ? 'active' : ''}`}>
-        <button
-          tabIndex={-1}
-          title="Stroke"
-          onClick={() => toggleMenu('stroke')}
-        >
-          <TbMinus />
-        </button>
+      {strokeStyleFigureTypes.includes(figureType) && (
+        <div className={`figure-sub-item ${openMenu === 'stroke' ? 'active' : ''}`}>
+          <button
+            tabIndex={-1}
+            title="Stroke"
+            onClick={() => toggleMenu('stroke')}
+          >
+            {strokeStyleOptions[figureStrokeIndex].icon}
+          </button>
 
-        {openMenu === 'stroke' && renderStrokeSubmenu()}
-      </div>
+          {openMenu === 'stroke' && renderStrokeSubmenu()}
+        </div>
+      )}
 
       <div className="figure-sub-cross-line" />
 
