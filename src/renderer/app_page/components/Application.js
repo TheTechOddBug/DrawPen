@@ -838,20 +838,29 @@ const Application = (settings) => {
   const handleChangeFigureWidth = (newWidthIndex) => {
     if (!activeFigureInfo) return;
 
-    const activeFigure = findActiveFigure()
+    setAllFigures(prevAllFigures => {
+      return prevAllFigures.map((figure) => {
+        if (figure.id !== activeFigureInfo.id) return figure;
 
-    activeFigure.widthIndex = newWidthIndex
+        if (figure.type === 'text') {
+          const [width, height] = calculateCanvasTextWidth(figure.text, newWidthIndex);
 
-    if (activeFigure.type === 'text') {
-      const [width, height] = calculateCanvasTextWidth(activeFigure.text, newWidthIndex);
+          return {
+            ...figure,
+            widthIndex: newWidthIndex,
+            width:      width,
+            height:     height,
+            scale:      1,
+            autoResize: true,
+          };
+        }
 
-      activeFigure.width = width;
-      activeFigure.height = height;
-      activeFigure.scale = 1;
-      activeFigure.autoResize = true;
-    }
-
-    setAllFigures([...allFigures]);
+        return {
+          ...figure,
+          widthIndex: newWidthIndex
+        };
+      });
+    });
   };
 
   const handleChangeFigureStroke = (newStrokeIndex) => {
