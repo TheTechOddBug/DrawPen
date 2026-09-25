@@ -95,6 +95,7 @@ const Application = (settings) => {
   const initialShowDrawingBorder = settings.show_drawing_border
   const initialCuteCursorMode = settings.cute_cursor_mode
   const initialPenSmoothing = settings.pen_smoothing
+  const initialPenStrokeWidthFixed = settings.pen_stroke_width_fixed
   const initialClearDrawingsOnHide = settings.clear_drawings_on_hide
   const initialToolbarDefaultBrush = settings.tool_bar_default_brush
   const initialToolbarDefaultFigure = settings.tool_bar_default_figure
@@ -164,6 +165,7 @@ const Application = (settings) => {
   const [cuteCursorMode, setCuteCursorMode] = useState(initialCuteCursorMode);
   const [isDocumentVisible, setIsDocumentVisible] = useState(true);
   const [penSmoothing, setPenSmoothing] = useState(initialPenSmoothing);
+  const [penStrokeWidthFixed, setPenStrokeWidthFixed] = useState(initialPenStrokeWidthFixed);
   const [clearDrawingsOnHide, setClearDrawingsOnHide] = useState(initialClearDrawingsOnHide);
   const [mainColorIndex, setMainColorIndex] = useState(initialMainColorIndex);
   const [secondaryColorIndex, setSecondaryColorIndex] = useState(initialSecondaryColorIndex);
@@ -1522,6 +1524,7 @@ const Application = (settings) => {
     setShowDrawingBorder(newSettings.show_drawing_border);
     setCuteCursorMode(newSettings.cute_cursor_mode);
     setPenSmoothing(newSettings.pen_smoothing);
+    setPenStrokeWidthFixed(newSettings.pen_stroke_width_fixed);
     setClearDrawingsOnHide(newSettings.clear_drawings_on_hide);
     setMainColorIndex(newSettings.swap_colors_indexes[0]);
     setSecondaryColorIndex(newSettings.swap_colors_indexes[1]);
@@ -1746,6 +1749,7 @@ const Application = (settings) => {
         activeTool={activeTool}
         handleChangeTool={handleChangeTool}
         colorList={colorList}
+        penStrokeWidthFixed={penStrokeWidthFixed}
       />
 
       {

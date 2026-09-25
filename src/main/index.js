@@ -139,6 +139,10 @@ const schema = {
     type: 'boolean',
     default: true
   },
+  pen_stroke_width_fixed: {
+    type: 'boolean',
+    default: false
+  },
   app_icon_color: {
     type: 'string',
     default: 'default'
@@ -595,7 +599,7 @@ function createSettingsWindow() {
   settingsWindow = new BrowserWindow({
     show: false,
     width: 800,
-    height: 600,
+    height: 647,
     resizable: false,
     minimizable: false,
     maximizable: false,
@@ -732,6 +736,7 @@ ipcMain.handle('get_settings', () => {
     show_drawing_border: store.get('show_drawing_border'),
     cute_cursor_mode: store.get('cute_cursor_mode'),
     pen_smoothing: store.get('pen_smoothing'),
+    pen_stroke_width_fixed: store.get('pen_stroke_width_fixed'),
     tool_bar_x: store.get('tool_bar_x'),
     tool_bar_y: store.get('tool_bar_y'),
     tool_bar_active_tool: store.get('tool_bar_active_tool'),
@@ -840,6 +845,7 @@ ipcMain.handle('get_configuration', () => {
     show_drawing_border:                      store.get('show_drawing_border'),
     cute_cursor_mode:                         store.get('cute_cursor_mode'),
     pen_smoothing:                            store.get('pen_smoothing'),
+    pen_stroke_width_fixed:                   store.get('pen_stroke_width_fixed'),
     tool_bar_color_palette:                   store.get('tool_bar_color_palette'),
     swap_colors_indexes:                      store.get('swap_colors_indexes'),
     fade_disappear_after_ms:                  store.get('fade_disappear_after_ms'),
@@ -1036,6 +1042,16 @@ ipcMain.handle('set_pen_smoothing', (_event, value) => {
   return null;
 });
 
+ipcMain.handle('set_pen_stroke_width_fixed', (_event, value) => {
+  rawLog('Setting fixed stroke width:', value)
+
+  store.set('pen_stroke_width_fixed', value)
+
+  refreshSettingsInRenderer();
+
+  return null;
+});
+
 ipcMain.handle('set_swap_colors', (_event, value) => {
   rawLog('Setting swap colors:', value)
 
@@ -1123,6 +1139,7 @@ function refreshSettingsInRenderer() {
     show_drawing_border:     store.get('show_drawing_border'),
     cute_cursor_mode:        store.get('cute_cursor_mode'),
     pen_smoothing:           store.get('pen_smoothing'),
+    pen_stroke_width_fixed:  store.get('pen_stroke_width_fixed'),
     tool_bar_color_palette:  store.get('tool_bar_color_palette'),
     swap_colors_indexes:     store.get('swap_colors_indexes'),
     clear_drawings_on_hide:  store.get('clear_drawings_on_hide'),

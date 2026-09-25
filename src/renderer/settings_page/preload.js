@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setShowDrawingBorder: (value) => ipcRenderer.invoke('set_show_drawing_border', value),
   setCuteCursorMode: (value) => ipcRenderer.invoke('set_cute_cursor_mode', value),
   setPenSmoothing: (value) => ipcRenderer.invoke('set_pen_smoothing', value),
+  setPenStrokeWidthFixed: (value) => ipcRenderer.invoke('set_pen_stroke_width_fixed', value),
   setLaserTimeMs: (value) => ipcRenderer.invoke('set_laser_time', value),
   setAppIconColor: (value) => ipcRenderer.invoke('set_app_icon_color', value),
   setSwapColors: (value) => ipcRenderer.invoke('set_swap_colors', value),

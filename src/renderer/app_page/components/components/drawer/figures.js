@@ -151,8 +151,9 @@ export const getCursorColor = (colorList, colorIndex, rainbowColorDeg) => {
   return colorInfo.color
 }
 
-export const drawPen = (ctx, figure, colorList, fadeOpacity = 1) => {
+export const drawPen = (ctx, figure, colorList, options = {}) => {
   const { points, colorIndex, widthIndex } = figure;
+  const { fadeOpacity = 1, penStrokeWidthFixed = false } = options;
 
   const colorInfo = colorList[colorIndex]
   const widthInfo = widthList[widthIndex]
@@ -165,7 +166,17 @@ export const drawPen = (ctx, figure, colorList, fadeOpacity = 1) => {
     penColor = colorInfo.color + fadeAlpha(fadeOpacity);
   }
 
-  const path2DData = getPerfectPath2D(points, { size: widthInfo.pen_width });
+  const strokeOptions = {
+    size: widthInfo.pen_width
+  };
+
+  if (penStrokeWidthFixed) {
+    strokeOptions.size = widthInfo.figure_size; // Trick to keep the pen size consistent
+    strokeOptions.simulatePressure = false;
+    strokeOptions.thinning = 0.0;
+  }
+
+  const path2DData = getPerfectPath2D(points, strokeOptions);
 
   ctx.fillStyle = penColor;
   ctx.fill(path2DData);
