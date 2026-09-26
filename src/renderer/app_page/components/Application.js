@@ -1120,11 +1120,19 @@ const Application = (settings) => {
       if (isOnTextAutoResizeHandle(x, y, activeFigure)) {
         const [width, height] = calculateCanvasTextWidth(activeFigure.text, activeFigure.widthIndex);
 
-        activeFigure.width = width;
-        activeFigure.height = height;
-        activeFigure.autoResize = true;
+        setAllFigures(prevAllFigures => {
+          return prevAllFigures.map((figure) => {
+            if (figure.id !== activeFigureInfo.id) return figure;
 
-        setAllFigures([...allFigures]);
+            return {
+              ...figure,
+              width: width,
+              height: height,
+              autoResize: true
+            };
+          });
+        });
+
         return;
       }
 

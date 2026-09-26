@@ -532,7 +532,8 @@ function createAboutWindow() {
   aboutWindow = new BrowserWindow({
     show: false,
     width: 250,
-    height: 250,
+    height: 220,
+    useContentSize: true,
     resizable: false,
     minimizable: false,
     maximizable: false,
@@ -599,7 +600,8 @@ function createSettingsWindow() {
   settingsWindow = new BrowserWindow({
     show: false,
     width: 800,
-    height: 647,
+    height: 615,
+    useContentSize: true,
     resizable: false,
     minimizable: false,
     maximizable: false,
