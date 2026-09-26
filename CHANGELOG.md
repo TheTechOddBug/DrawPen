@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.0.58] - 2026-09-26
+### Features:
+- Added a contextual toolbar for selected figures
+- Added a Diamond figure.
+- Added resizing by edges (for shapes and text)
+- Added dynamic width for text (+ auto-size restoration)
+- Added Solid, Dashed, and Dotted stroke styles
+- Added Sharp and Rounded edge styles
+- Added a "Fixed Stroke Width" setting for Pen and Fade Pen
+
+### Improvements:
+- Improved figure hit testing and erasing accuracy (Change formulas)
+- Replaced the whiteboard panel toggle with a Settings icon
+- Cleared the active figure selection when DrawPen is hidden
+
+### Bug Fixes:
+- Fixed toast layout for long file paths.
+- Fixed Rainbow color rendering for scaled text.
+- Upgraded Electron from 40.4.0 to 44.4.3 to resolve issue [#105](https://github.com/DmytroVasin/DrawPen/issues/105).
+
 ## [0.0.57] - 2026-08-25
 ### Features:
 - Add toolbar shortcut hints on CMD/CTRL hold
